@@ -1,0 +1,55 @@
+# Dependencias
+node_modules/
+package-lock.json
+
+# Entornos virtuales Python
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Apps Script
+.clasp.json
+appsscript.json
+Code.gs
+
+# Configuración sensible
+config.js
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos temporales
+*.tmp
+*.bak
+
+# Datos sensibles
+*.xlsx
+*.xls
+*.csv
+gimnasio_box.xlsx
+
+# Build
+dist/
+build/
+
+# Testing
+.pytest_cache/
+coverage/
+.coverage
+
+# Otros
+request-waiver-operation-example.json

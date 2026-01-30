@@ -1,0 +1,23 @@
+const CONFIG = {
+    // ⚠️ IMPORTANTE: Reemplaza esta URL con la de tu deployment de Apps Script
+    // Para obtenerla:
+    // 1. Ve a https://script.google.com
+    // 2. Abre tu proyecto
+    // 3. Deploy → Manage Deployments → Copia la URL
+    API_URL: 'TU_URL_DE_WEB_APP_AQUI',
+    
+    MESSAGES: {
+        ERROR_CONEXION: 'Error de conexión. Verifica tu internet.',
+        SUCCESS_RESERVA: '¡Reserva exitosa! ✅',
+        SUCCESS_CANCELACION: 'Reserva cancelada correctamente.',
+        ERROR_CUPOS: 'Esta clase ya no tiene cupos disponibles.',
+        ERROR_CREDITOS: 'Ya agotaste tus créditos semanales.',
+    },
+    
+    // Configuración de UI
+    UI: {
+        LOGO: 'internationalBox.jpeg',
+        TITULO: 'International Box',
+        SUBTITULO: 'Sistema de Reservas'
+    }
+};

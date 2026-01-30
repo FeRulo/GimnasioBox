@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internacional Box - Gestión Deportiva</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥊</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f2f5f8',
+                            100: '#e1e9f0',
+                            200: '#c8d7e5',
+                            300: '#a1bbd2',
+                            400: '#7397b9',
+                            500: '#5379a1',
+                            600: '#416186',
+                            700: '#364f6d',
+                            800: '#2f435c',
+                            900: '#1a2a40',
+                        },
+                        silver: {
+                            100: '#f5f5f5',
+                            200: '#eeeeee',
+                            300: '#e0e0e0',
+                            400: '#bdbdbd',
+                            500: '#9e9e9e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .view { display: none; animation: fadeIn 0.4s ease-out; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Responsive: Desktop muestra en el centro con ancho máximo */
+        @media (min-width: 768px) {
+            #app {
+                max-width: 900px !important;
+                margin: 20px auto;
+                border-radius: 24px;
+                overflow: hidden;
+            }
+            .main-content {
+                padding: 40px !important;
+            }
+            .view-login {
+                min-height: 600px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            #app {
+                max-width: 1200px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-navy-900 no-scrollbar">
+
+    <div id="app" class="max-w-md md:max-w-4xl lg:max-w-6xl mx-auto min-h-screen flex flex-col relative bg-white shadow-2xl">
+        
+        <!-- HEADER DINÁMICO -->
+        <header id="appHeader" class="p-6 md:p-8 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-50">
+            <div class="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-opacity" onclick="app.goHome()">
+                <img src="internationalBox.jpeg" alt="Internacional Box Logo" class="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-sm">
+                <div>
+                    <h1 class="text-sm md:text-lg font-black tracking-tight leading-none">INTERNACIONAL</h1>
+                    <span class="text-[10px] md:text-xs font-bold text-silver-500 tracking-[0.2em] uppercase">Box & Physio</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="userTag" class="text-[10px] font-bold px-2 py-1 bg-navy-100 rounded-md uppercase"></div>
+                <button onclick="app.logout()" class="p-2 hover:bg-red-50 rounded-full transition-all" title="Cerrar sesión">
+                    <i data-lucide="log-out" class="w-4 h-4 text-red-600"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- VISTA: LOGIN -->
+        <main id="view-login" class="view active flex-grow flex flex-col justify-center p-8 md:p-16 view-login">
+            <div class="mb-10 md:mb-14 text-center max-w-md mx-auto">
+                <div class="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-full mx-auto mb-6 md:mb-8 flex items-center justify-center border border-gray-100">
+                    <i data-lucide="shield-check" class="w-10 h-10 md:w-14 md:h-14 text-navy-900"></i>
+                </div>
+                <h2 class="text-2xl md:text-4xl font-black mb-2 md:mb-3">Acceso Atletas</h2>
+                <p class="text-sm md:text-base text-gray-400">Ingresa tu número de documento para gestionar tus sesiones semanales.</p>
+            </div>
+            
+            <div class="space-y-4 md:space-y-6 max-w-md mx-auto">
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-4 md:left-5 top-4 md:top-5 w-5 h-5 md:w-6 md:h-6 text-gray-300"></i>
+                    <input type="number" id="docInput" placeholder="Número de Documento" 
+                        onkeypress="if(event.key === 'Enter') app.login()"
+                        class="w-full pl-12 md:pl-14 pr-4 md:pr-6 py-4 md:py-5 text-base md:text-lg bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-navy-900 outline-none transition-all font-medium">
+                </div>
+                <button onclick="app.login()" id="loginBtn" 
+                    class="w-full bg-navy-900 text-white py-4 md:py-5 text-base md:text-lg rounded-2xl font-bold hover:bg-black transition-all shadow-lg shadow-navy-900/20">
+                    Entrar al Sistema
+                </button>
+            </div>
+        </main>
+
+        <!-- VISTA: DASHBOARD -->
+        <main id="view-main" class="view p-6 md:p-10 space-y-6 md:space-y-8 main-content">
+            <div class="bg-navy-900 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl">
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-300">Créditos de la Semana</span>
+                        <div id="badgeMembresia" class="text-[9px] px-2 py-1 rounded bg-white/10 border border-white/20"></div>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="creditsCount" class="text-6xl font-black tracking-tighter">0</span>
+                        <span class="text-navy-400 text-2xl font-bold">/</span>
+                        <span id="creditsLimit" class="text-2xl font-bold text-navy-200">0</span>
+                    </div>
+                    <p class="text-[10px] mt-4 text-navy-300 font-medium">* Los créditos se reinician cada domingo.</p>
+                </div>
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 md:gap-6">
+                <button onclick="app.changeView('booking')" class="p-6 bg-white border border-gray-100 rounded-3xl flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition-all">
+                    <div class="p-3 bg-red-50 rounded-2xl"><i data-lucide="calendar-plus" class="text-red-600"></i></div>
+                    <span class="text-sm font-bold">Reservar</span>
+                </button>
+                <button onclick="app.changeView('sessions')" class="p-6 bg-white border border-gray-100 rounded-3xl flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition-all">
+                    <div class="p-3 bg-blue-50 rounded-2xl"><i data-lucide="list-checks" class="text-blue-600"></i></div>
+                    <span class="text-sm font-bold">Mis Clases</span>
+                </button>
+                <button onclick="app.changeView('payments')" class="col-span-2 p-6 md:p-8 bg-white border border-gray-100 rounded-3xl flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 bg-green-50 rounded-2xl"><i data-lucide="wallet" class="text-green-600"></i></div>
+                        <div class="text-left">
+                            <span class="text-sm font-bold block">Pagos y Membresía</span>
+                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Sube tu soporte de Nequi</span>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-gray-300"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- VISTA: RESERVAS -->
+        <main id="view-booking" class="view p-6 md:p-10 main-content">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="app.changeView('main')" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="arrow-left"></i></button>
+                <h2 class="text-lg font-black">Agenda Disponible</h2>
+                <div class="w-8"></div>
+            </div>
+            <div id="bookingList" class="space-y-4 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 md:space-y-0"></div>
+        </main>
+
+        <!-- VISTA: MIS SESIONES -->
+        <main id="view-sessions" class="view p-6 md:p-10 main-content">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="app.changeView('main')" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="arrow-left"></i></button>
+                <h2 class="text-lg font-black">Mis Próximas Clases</h2>
+                <div class="w-8"></div>
+            </div>
+            <div id="userSessionsList" class="space-y-4 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 md:space-y-0"></div>
+        </main>
+
+        <!-- VISTA: PAGOS -->
+        <main id="view-payments" class="view p-6 md:p-10 main-content">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="app.changeView('main')" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="arrow-left"></i></button>
+                <h2 class="text-lg font-black">Pagos y Soporte</h2>
+                <div class="w-8"></div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 mb-6 text-center">
+                <h3 class="font-bold mb-2">Paga con Nequi</h3>
+                <p class="text-xs text-gray-500 mb-6">Haz tu transferencia y adjunta la captura del comprobante abajo.</p>
+                <a href="https://recarga.nequi.com.co/" target="_blank" 
+                    class="inline-flex items-center gap-3 bg-[#ff0092] text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-pink-200">
+                    Ir a Nequi <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Tipo de Trámite</label>
+                    <select id="payType" class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-bold outline-none">
+                        <option value="membresia">Inscripción Membresía Anual</option>
+                        <option value="mensualidad">Mensualidad Vigente</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Captura del Soporte</label>
+                    <div class="relative w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-all">
+                        <input type="file" id="payFile" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <i data-lucide="camera" class="text-gray-300 mb-2"></i>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Subir Imagen</span>
+                    </div>
+                </div>
+                <button onclick="app.sendPayment()" id="sendPayBtn" class="w-full bg-navy-900 text-white py-4 rounded-2xl font-bold mt-4 shadow-lg shadow-navy-900/20">
+                    Enviar Comprobante
+                </button>
+            </div>
+        </main>
+
+        <!-- NOTIFICACIONES -->
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-xs bg-navy-900 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform translate-y-40 transition-transform duration-300 z-[100]">
+            <div id="toastIcon" class="p-2 bg-white/10 rounded-lg"><i data-lucide="info" class="w-4 h-4"></i></div>
+            <span id="toastMsg" class="text-xs font-bold"></span>
+        </div>
+
+        <!-- LOADER -->
+        <div id="loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center hidden">
+            <div class="bg-white rounded-3xl p-8 flex flex-col items-center gap-4 shadow-2xl">
+                <div class="w-16 h-16 border-4 border-navy-100 border-t-navy-900 rounded-full animate-spin"></div>
+                <p class="text-sm font-bold text-navy-900">Cargando...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>     

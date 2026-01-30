@@ -1,0 +1,15 @@
+*.md
+!README.md
+app.js
+index.html
+config.js
+crear_excel.py
+backend-local.js
+package.json
+package-lock.json
+node_modules/
+.git/
+.gitignore
+OPTIMIZACIONES.md
+DESARROLLO-LOCAL.md
+SETUP-CLASP.md

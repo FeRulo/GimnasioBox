@@ -1,0 +1,17 @@
+{
+  "name": "GimnasioBox Backend Testing",
+  "version": "1.0.0",
+  "description": "Setup para desarrollo local de Apps Script con clasp",
+  "scripts": {
+    "clasp:install": "npm install -g @google/clasp",
+    "clasp:login": "clasp login",
+    "clasp:push": "clasp push",
+    "clasp:pull": "clasp pull",
+    "clasp:logs": "clasp logs --watch",
+    "clasp:open": "clasp open"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2",
+    "@types/google-apps-script": "^1.0.83"
+  }
+}
