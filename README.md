@@ -65,7 +65,18 @@ git clone https://github.com/TU_USUARIO/GimnasioBox.git
 cd GimnasioBox
 ```
 
-### 2. Crear la Base de Datos (Google Sheets)
+### 2. Configurar Variables de Entorno
+
+```bash
+# Copiar el archivo de ejemplo
+cp config.js.example config.js
+
+# Editar config.js y agregar:
+# - SHEET_ID: ID de tu Google Sheets
+# - API_URL: URL de tu Web App desplegada
+```
+
+### 3. Crear la Base de Datos (Google Sheets)
 
 #### Opción A: Usar el script Python
 ```bash
@@ -105,22 +116,25 @@ Crea un Google Sheet con las siguientes hojas:
    - Acceso: **Cualquier usuario**
 5. Copia la URL del deployment
 
-### 4. Configurar el Frontend
+### 4. Desplegar a Apps Script
 
 ```bash
-# Copiar template de configuración
-cp config.js.example config.js
+# Generar Code.gs con tu configuración
+./build-appsscript.sh
 
-# Editar config.js
-nano config.js
+# Subir a Apps Script (si usas clasp)
+./sync.sh
+
+# O manualmente:
+# 1. Ve a https://script.google.com
+# 2. Copia el contenido de Code.gs
+# 3. Deploy → Nueva implementación → Aplicación web
 ```
 
-```javascript
-const CONFIG = {
-    API_URL: 'TU_URL_DE_APPS_SCRIPT_AQUI', // ← Pegar URL del paso 3
-    // ... resto de configuración
-}
-```
+**Importante:** 
+- `config.js` NO se sube al repositorio (está en .gitignore)
+- Cada desarrollador configura su propio `config.js`
+- `build-appsscript.sh` inyecta la configuración en Code.gs antes del deploy
 
 ### 5. Abrir la Aplicación
 
@@ -252,7 +266,7 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## 👤 Autor
 
-**International Box**
+**Fernando Páez**
 
 ## 🙏 Agradecimientos
 

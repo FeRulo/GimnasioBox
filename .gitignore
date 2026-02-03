@@ -14,8 +14,8 @@ __pycache__/
 appsscript.json
 Code.gs
 
-# Configuración sensible
-config.js
+# Configuración sensible (solo backend)
+config.private.gs
 
 # Archivos de sistema
 .DS_Store
