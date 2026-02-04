@@ -123,7 +123,7 @@ const app = {
         if (this.sessions.length > 0) return; // Ya están cargados
         
         this.showLoader();
-        const horariosResult = await this.apiCall('getHorarios', { documento: this.user.doc });
+        const horariosResult = await this.apiCall('getHorarios', { documento: this.user.doc ,debug:true});
         if (horariosResult.success) {
             this.sessions = horariosResult.horarios.map(h => ({
                 id: h.id,
@@ -237,7 +237,11 @@ const app = {
         // Renderizar por fecha
         let html = '';
         Object.keys(sessionsByDate).sort().forEach(date => {
-            const dateObj = new Date(date);
+            console.log('Renderizando sesiones para fecha:', date);
+            // Crear fecha sin conversión de timezone (usar componentes locales)
+            const [year, month, day] = date.split('-');
+            const dateObj = new Date(year, month - 1, day);
+            console.log('Objeto Date:', dateObj);
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             const formattedDate = dateObj.toLocaleDateString('es-ES', options);
             
@@ -298,7 +302,9 @@ const app = {
         // Renderizar por fecha
         let html = '';
         Object.keys(reservationsByDate).sort().forEach(date => {
-            const dateObj = new Date(date);
+            // Crear fecha sin conversión de timezone (usar componentes locales)
+            const [year, month, day] = date.split('-');
+            const dateObj = new Date(year, month - 1, day);
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             const formattedDate = dateObj.toLocaleDateString('es-ES', options);
             

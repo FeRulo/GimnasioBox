@@ -7,7 +7,7 @@ const CONFIG = {
     
     // URL de tu Web App de Google Apps Script
     // Ejemplo: 'https://script.google.com/macros/s/AKfycby.../exec'
-    API_URL: 'https://script.google.com/macros/s/AKfycbwntqeKvY614sh3HHMDqNEE54-3hmqprrk58YAADreyXz8Y6CRZzPeasonH6LjPhI0/exec',
+    API_URL: 'https://script.google.com/macros/s/AKfycbx3BDeTqjHU1cH6glSaF5Yaz9lOQyQvFwzMvlE0Uj5S7803yuVcWn1WyF0p56qAixU/exec',
     
     // Configuración de la aplicación
     APP_NAME: 'Internacional Box',
