@@ -7,7 +7,7 @@ const CONFIG = {
     
     // URL de tu Web App de Google Apps Script
     // Ejemplo: 'https://script.google.com/macros/s/AKfycby.../exec'
-    API_URL: 'https://script.google.com/macros/s/AKfycbx3BDeTqjHU1cH6glSaF5Yaz9lOQyQvFwzMvlE0Uj5S7803yuVcWn1WyF0p56qAixU/exec',
+    API_URL: 'https://script.google.com/macros/s/AKfycbygubWwy5lRta4eGhLr2EGZJxSNhkWIpWgCrRa0awpTTKAOJwAvkjZqafdnIJ_KMCs/exec',
     
     // Configuración de la aplicación
     APP_NAME: 'Internacional Box',
@@ -20,8 +20,3 @@ const CONFIG = {
         ERROR_NO_AUTORIZADO: 'No tienes autorización para esta acción.'
     }
 };
-
-// Verificar si la API está configurada
-console.log('🔧 CONFIG - API URL:', CONFIG.API_URL);
-console.log('📍 Para probar la API, abre esta URL en tu navegador:');
-console.log(CONFIG.API_URL + '?action=getHorarios&callback=test');

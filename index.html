@@ -74,7 +74,7 @@
         <!-- HEADER DINÁMICO -->
         <header id="appHeader" class="p-6 md:p-8 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-50">
             <div class="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-opacity" onclick="app.goHome()">
-                <img src="internationalBox.jpeg" alt="Internacional Box Logo" class="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-sm">
+                <img src="images/internationalBox.jpeg" alt="Internacional Box Logo" class="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-sm">
                 <div>
                     <h1 class="text-sm md:text-lg font-black tracking-tight leading-none">INTERNACIONAL</h1>
                     <span class="text-[10px] md:text-xs font-bold text-silver-500 tracking-[0.2em] uppercase">Box & Physio</span>
@@ -109,6 +109,15 @@
                     class="w-full bg-navy-900 text-white py-4 md:py-5 text-base md:text-lg rounded-2xl font-bold hover:bg-black transition-all shadow-lg shadow-navy-900/20">
                     Entrar al Sistema
                 </button>
+                
+                <!-- Botón de Inscripción -->
+                <div class="text-center pt-4 border-t border-gray-200">
+                    <p class="text-xs text-gray-400 mb-3">¿Aún no tienes cuenta?</p>
+                    <button onclick="app.changeView('register')" 
+                        class="w-full bg-red-600 text-white py-4 md:py-5 text-base md:text-lg rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20">
+                        📝 Nueva Inscripción
+                    </button>
+                </div>
             </div>
         </main>
 
@@ -128,6 +137,13 @@
                     <p class="text-[10px] mt-4 text-navy-300 font-medium">* Los créditos se reinician cada domingo.</p>
                 </div>
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full"></div>
+            </div>
+
+            <!-- Link a Condiciones -->
+            <div class="text-center mb-4">
+                <button onclick="app.showModal(true)" class="text-xs text-navy-600 hover:text-navy-900 font-semibold underline">
+                    📄 Ver Condiciones y Normativa
+                </button>
             </div>
 
             <div class="grid grid-cols-2 gap-4 md:gap-6">
@@ -209,7 +225,261 @@
                     Enviar Comprobante
                 </button>
             </div>
+
+            <!-- Link a Condiciones -->
+            <div class="text-center mt-6 pt-6 border-t border-gray-200">
+                <button onclick="app.showModal(true)" class="text-xs text-navy-600 hover:text-navy-900 font-semibold underline">
+                    📄 Ver Condiciones y Normativa del Gimnasio
+                </button>
+            </div>
         </main>
+
+        <!-- VISTA: INSCRIPCIÓN -->
+        <main id="view-register" class="view p-6 md:p-10 main-content overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="app.changeView('login')" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="arrow-left"></i></button>
+                <h2 class="text-lg font-black">Nueva Inscripción</h2>
+                <div class="w-8"></div>
+            </div>
+
+            <div class="max-w-2xl mx-auto space-y-4">
+                <!-- Nombre Completo -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Nombre Completo *</label>
+                    <input type="text" id="regNombre" placeholder="Escribe tu nombre completo" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Correo Electrónico -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Correo Electrónico *</label>
+                    <input type="email" id="regEmail" placeholder="ejemplo@correo.com" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Fecha de Nacimiento -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Fecha de Nacimiento (DD/MM/AAAA) *</label>
+                    <div class="relative">
+                        <input type="text" id="regFechaNac" placeholder="25/12/1990" maxlength="10"
+                            class="w-full p-4 pr-12 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                        <button type="button" onclick="document.getElementById('regFechaNacHidden').showPicker()" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                        <input type="date" id="regFechaNacHidden" class="absolute opacity-0 pointer-events-none">
+                    </div>
+                    <p id="edadCalculada" class="text-xs text-gray-500 mt-1"></p>
+                </div>
+
+                <!-- Contacto -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Contacto (Teléfono) *</label>
+                    <input type="tel" id="regContacto" placeholder="Ej: 3001234567" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Cédula -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Cédula *</label>
+                    <input type="text" id="regCedula" placeholder="Número de documento" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- EPS -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">EPS *</label>
+                    <input type="text" id="regEPS" placeholder="Nombre de tu EPS" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Acudiente -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Acudiente</label>
+                    <input type="text" id="regAcudiente" placeholder="Nombre del acudiente (si aplica)" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Contacto Acudiente -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Contacto Acudiente</label>
+                    <input type="tel" id="regContactoAcudiente" placeholder="Teléfono del acudiente" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                </div>
+
+                <!-- Antecedentes -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Antecedentes Médicos</label>
+                    <textarea id="regAntecedentes" rows="3" placeholder="Lesiones, cirugías, condiciones médicas importantes..." 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900 resize-none"></textarea>
+                </div>
+
+                <!-- Observaciones -->
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Objetivos *</label>
+                    <select id="regObjetivos" 
+                        class="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900">
+                        <option value="">Selecciona tu objetivo principal</option>
+                        <option value="Funcional">Acondicionamiento Funcional</option>
+                        <option value="Perder peso">Perder Peso</option>
+                        <option value="Aumentar masa muscular">Aumentar Masa Muscular</option>
+                        <option value="Aprender boxeo">Aprender Boxeo</option>
+                    </select>
+                </div>
+
+                <!-- Checkbox de Consentimiento -->
+                <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                    <!-- Campo de verificación -->
+                    <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                        <p class="text-xs font-bold text-yellow-800 mb-2">� Para confirmar que leíste todas las condiciones:</p>
+                        <p class="text-sm text-gray-700 mb-2">Busca y escribe la <span class="font-black text-red-600">frase oculta</span> que está marcada en el texto de las condiciones</p>
+                        <input type="text" id="inputVerificacion" placeholder="Escribe la frase oculta aquí..." disabled
+                            class="w-full p-3 bg-white border border-gray-300 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-navy-900 disabled:opacity-50">
+                        <p id="mensajeScroll" class="text-xs text-red-600 mt-2 font-bold">⚠️ Primero debes leer todas las condiciones completamente</p>
+                    </div>
+                    
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="regConsent" disabled class="mt-1 w-5 h-5 rounded border-gray-300 text-navy-900 focus:ring-navy-900 disabled:opacity-50">
+                        <span class="text-xs text-gray-700">
+                            He leído completamente y acepto las <button type="button" onclick="app.showModal()" class="text-red-600 font-bold underline">condiciones y reglas de juego</button> de Internacional Box.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Botón de Envío -->
+                <button onclick="app.submitRegistration()" id="registerBtn" 
+                    class="w-full bg-navy-900 text-white py-5 text-base rounded-2xl font-bold hover:bg-black transition-all shadow-lg shadow-navy-900/20 mt-6">
+                    ✅ Enviar Inscripción
+                </button>
+            </div>
+        </main>
+
+        <!-- MODAL DE CONDICIONES -->
+        <div id="modalCondiciones" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
+                <!-- Header del Modal -->
+                <div class="bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-navy-900">📋 Reglas de Juego Internacional Box</h3>
+                        <p class="text-xs text-red-600 font-bold mt-1">⚠️ Es obligatorio leer todo antes de continuar</p>
+                    </div>
+                    <button onclick="app.closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Contenido del Modal con scroll tracking -->
+                <div id="modalContent" class="p-6 md:p-8 space-y-6 text-sm leading-relaxed text-gray-700 overflow-y-auto flex-1">
+                    <p class="font-bold text-navy-900">Estimados usuarios,</p>
+                    <p>Reciban un cordial saludo.</p>
+                    <p>Con el fin de mejorar la organización, el respeto por los tiempos de todos y la sostenibilidad de nuestro servicio de acondicionamiento físico (boxeo, funcional, pesas y fisioterapia), les informamos las siguientes disposiciones que entran en vigencia a partir de la fecha:</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">1. Reprogramación y cancelación de clases</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li>Las clases deben ser reprogramadas con mínimo <strong>12 horas de anticipación</strong>.</li>
+                                <li>Las cancelaciones deben realizarse con mínimo <strong>3 horas de anticipación</strong>.</li>
+                                <li>Las clases que no se cancelen o reprogramen dentro de estos tiempos serán consideradas como <strong>clase tomada</strong>.</li>
+                                <li>Si llega <strong>20 minutos después</strong> de iniciada la clase se da como tomada la sesión.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">2. Derechos de autor y uso de material</h4>
+                            <p>Todo el material, metodologías, rutinas, contenidos y planes de entrenamiento diseñados por el equipo son de uso exclusivo del centro. No está permitido su reproducción, distribución o uso comercial sin autorización previa.</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">3. Reposición de clases</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li>Las reposiciones deben realizarse antes de finalizar su fecha de corte.</li>
+                                <li>La organización de las reposiciones se debe gestionar de manera interna directamente con el equipo administrativo o entrenadores, según disponibilidad de agenda.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">4. Actualización de tarifas – Año 2026</h4>
+                            <p class="mb-3">De acuerdo con el ajuste anual basado en el Índice de Precios al Consumidor (IPC), se aplicará un incremento de <strong>$5.000 COP</strong> en cada membresía.</p>
+                            
+                            <p class="font-semibold text-navy-900 mb-2">Tarifas generales</p>
+                            <ul class="list-none space-y-1 text-sm">
+                                <li>💰 Sesión individual (sin membresía): <strong>$45.000</strong> por clase</li>
+                                <li>💰 Sesión de fisioterapia: <strong>$45.000</strong></li>
+                                <li>📅 Membresía anual: <strong>$35.000</strong></li>
+                            </ul>
+
+                            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mt-4 mb-4">
+                                <p class="text-sm font-semibold text-blue-900 mb-2">💡 ¿Qué incluye la membresía anual?</p>
+                                <p class="text-sm text-blue-800">La membresía anual de <strong>$35.000</strong> te da acceso a planes mensuales con tarifas preferenciales. <strong>Sin membresía, cada clase tiene un costo de $45.000</strong>, pero con membresía activa puedes acceder a los planes mensuales más económicos que se muestran a continuación:</p>
+                            </div>
+
+                            <p class="font-semibold text-navy-900 mb-2">Planes mensuales con membresía activa</p>
+                            <ul class="list-none space-y-1 text-sm">
+                                <li>• 1 día por semana → <strong>$115.000</strong> (4 clases al mes) <span class="text-xs text-green-600">≈ $28.750/clase con membresía vs. $45.000 sin membresía</span></li>
+                                <li>• 2 días por semana → <strong>$145.000</strong> (8 clases al mes) <span class="text-xs text-green-600">≈ $18.125/clase con membresía vs. $45.000 sin membresía</span></li>
+                                <li>• 3 días por semana → <strong>$175.000</strong> (12 clases al mes) <span class="text-xs text-green-600">≈ $14.583/clase con membresía vs. $45.000 sin membresía</span></li>
+                                <li>• 4 días por semana → <strong>$205.000</strong> (16 clases al mes) <span class="text-xs text-green-600">≈ $12.812/clase con membresía vs. $45.000 sin membresía</span></li>
+                                <li>• 5 días por semana → <strong>$235.000</strong> (20 clases al mes) <span class="text-xs text-green-600">≈ $11.750/clase con membresía vs. $45.000 sin membresía</span></li>
+                            </ul>
+
+                            <p class="mt-3 text-xs italic">Las personas provenientes de la sede anterior mantendrán un ajuste únicamente correspondiente al IPC.</p>
+
+                            <p class="font-semibold text-navy-900 mt-4 mb-2">Programa de referidos:</p>
+                            <p class="text-sm">Si refieres a una o más personas que realicen inscripción activa, podrás acceder temporalmente a un plan inferior al que actualmente tienes.<br>
+                            <span class="italic">Ejemplo: Si tienes plan de 3 días ($170.000) y refieres una persona, pagarías el valor del plan anterior ($140.000) durante dos meses. Finalizado este periodo, se retomará el valor original.</span></p>
+
+                            <p class="mt-3 text-xs">Este ajuste busca mantener la calidad del servicio, la mejora continua de los espacios, materiales y atención profesional.</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">5. Definiciones importantes</h4>
+                            
+                            <p class="font-semibold text-navy-900 mt-3">Membresía:</p>
+                            <p class="text-sm mb-2">Corresponde a un plan de clases semanal, no acumulable. Las clases deben realizarse dentro de la semana correspondiente (lunes a domingo), excepto cuando la cancelación sea responsabilidad del gimnasio.</p>
+                            <p class="text-sm mb-2">La membresía debe cancelarse con mínimo un mes de anticipación. De no realizarse, continuará generándose el cobro mensual.</p>
+                            
+                            <p class="font-semibold text-sm mt-2">La membresía incluye:</p>
+                            <ul class="list-disc pl-5 space-y-1 text-sm mt-1">
+                                <li>Test físicos: 1 cada semestre</li>
+                                <li>Toma de medidas antropométricas: 1 cada semestre</li>
+                                <li>Valoración terapéutica al ingreso</li>
+                                <li>Seguimiento cuantitativo semestral</li>
+                                <li>Descarga muscular general: 1 cada cuatrimestre</li>
+                            </ul>
+
+                            <p class="font-semibold text-navy-900 mt-4">Sesión de clase:</p>
+                            <p class="text-sm">Espacio de entrenamiento de aproximadamente una hora y media, con enfoque personalizado según los objetivos del usuario.</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-navy-900 mb-2">6. Requisitos Administrativos</h4>
+                            <p class="mb-2">Con el objetivo de generar un ambiente más controlado y seguro, los papeles deben entregarse de manera obligatoria por todos los afiliados y las personas que entrenen como única vez:</p>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li>Consentimiento informado (en físico)</li>
+                                <li>Certificado de EPS (virtual o físico)</li>
+                                <li>Cuestionario de aptitud para la actividad física (PAR-Q) (virtual o físico)</li>
+                            </ul>
+                            <p class="mt-3 text-xs italic" id="codigoOculto"><!-- Se insertará dinámicamente --></p>
+                        </div>
+                    </div>
+
+                    <p class="mt-6 font-semibold text-navy-900">Cordialmente,<br>Internacional Box</p>
+                </div>
+
+                <!-- Footer del Modal -->
+                <div class="bg-gray-50 p-6 border-t border-gray-200">
+                    <div id="scrollProgress" class="mb-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div id="scrollBar" class="bg-navy-900 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <p id="scrollMessage" class="text-xs text-center font-bold text-red-600 mb-3">Desplázate hasta el final para continuar</p>
+                    <button onclick="app.closeModal()" id="btnCerrarModal" disabled
+                        class="w-full bg-navy-900 text-white py-4 rounded-2xl font-bold hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        He Leído Todo - Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- NOTIFICACIONES -->
         <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-xs bg-navy-900 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform translate-y-40 transition-transform duration-300 z-[100]">
@@ -227,7 +497,7 @@
 
     </div>
 
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script src="src/config.js"></script>
+    <script src="src/app.js"></script>
 </body>
 </html>     

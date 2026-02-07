@@ -28,7 +28,6 @@ const app = {
                 
                 // Crear función global de callback
                 window[callbackName] = function(data) {
-                    console.log('✅ Respuesta recibida:', data);
                     delete window[callbackName];
                     if (document.body.contains(script)) {
                         document.body.removeChild(script);
@@ -44,14 +43,10 @@ const app = {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
                 });
                 
-                console.log('🔄 Llamando a:', url);
-                
                 // Crear script tag para JSONP
                 const script = document.createElement('script');
                 script.src = url;
                 script.onerror = function(error) {
-                    console.error('❌ Error al cargar script:', error);
-                    console.error('URL que falló:', url);
                     delete window[callbackName];
                     if (document.body.contains(script)) {
                         document.body.removeChild(script);
@@ -64,7 +59,6 @@ const app = {
                 // Timeout de 30 segundos
                 setTimeout(() => {
                     if (window[callbackName]) {
-                        console.error('⏱️ Timeout: el servidor no respondió');
                         delete window[callbackName];
                         if (document.body.contains(script)) {
                             document.body.removeChild(script);
@@ -74,7 +68,6 @@ const app = {
                 }, 30000);
             });
         } catch (error) {
-            console.error('❌ Error en llamada API:', error);
             this.notify(error.message || CONFIG.MESSAGES.ERROR_CONEXION, 'wifi-off');
             return { success: false, error: error.message };
         }
@@ -201,6 +194,11 @@ const app = {
             target.classList.add('active');
             target.style.display = 'block';
             
+            // Si es la vista de registro, mostrar modal obligatorio
+            if (viewId === 'register') {
+                setTimeout(() => this.showModal(), 300);
+            }
+            
             // Cargar datos solo cuando se necesitan
             if (viewId === 'booking') {
                 // Siempre recargar para tener datos actualizados
@@ -212,8 +210,6 @@ const app = {
             
             lucide.createIcons();
             window.scrollTo(0, 0);
-        } else {
-            console.error("Vista no encontrada: " + viewId);
         }
     },
 
@@ -237,11 +233,9 @@ const app = {
         // Renderizar por fecha
         let html = '';
         Object.keys(sessionsByDate).sort().forEach(date => {
-            console.log('Renderizando sesiones para fecha:', date);
             // Crear fecha sin conversión de timezone (usar componentes locales)
             const [year, month, day] = date.split('-');
             const dateObj = new Date(year, month - 1, day);
-            console.log('Objeto Date:', dateObj);
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             const formattedDate = dateObj.toLocaleDateString('es-ES', options);
             
@@ -450,7 +444,270 @@ const app = {
         setTimeout(() => {
             toast.style.transform = "translate( -50%, 200px)";
         }, 3500);
+    },
+
+    // ========== MODAL DE CONDICIONES ==========
+    showModal(readOnly = false) {
+        const modal = document.getElementById('modalCondiciones');
+        const modalContent = document.getElementById('modalContent');
+        const scrollBar = document.getElementById('scrollBar');
+        const scrollMessage = document.getElementById('scrollMessage');
+        const btnCerrar = document.getElementById('btnCerrarModal');
+        const lugarCodigo = document.getElementById('codigoOculto');
+        
+        // Modo de solo lectura: sin validación ni tracking
+        if (readOnly) {
+            lugarCodigo.innerHTML = '';
+            scrollBar.style.width = '100%';
+            scrollMessage.textContent = '';
+            btnCerrar.disabled = false;
+            this.modalLeido = false;
+            this.codigoActual = null;
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+            return;
+        }
+        
+        // Modo registro: con validación completa
+        // Generar frase oculta aleatoria (estilo cláusula Van Halen)
+        const frasesOcultas = [
+            'GUANTES AZULES',
+            'TOALLA ROJA',
+            'CAMPEON 2026',
+            'SALTO DE CUERDA',
+            'AGUA FRIA',
+            'VENDAS NEGRAS',
+            'TIMBRE DORADO',
+            'GOLPE PERFECTO',
+            'FOCO MENTAL',
+            'VICTORIA ASEGURADA',
+            'FUERZA MAXIMA',
+            'ROUND FINAL'
+        ];
+        
+        const fraseAleatoria = frasesOcultas[Math.floor(Math.random() * frasesOcultas.length)];
+        
+        // Insertar la frase oculta en el texto de condiciones
+        lugarCodigo.innerHTML = `<span class="inline-block bg-red-100 border-2 border-red-500 px-3 py-1 rounded-lg font-black text-red-600 animate-pulse">📌 FRASE DE VERIFICACIÓN: ${fraseAleatoria}</span>`;
+        
+        this.codigoActual = fraseAleatoria;
+        this.modalLeido = false;
+        
+        modal.classList.remove('hidden');
+        
+        // Scroll tracking
+        modalContent.addEventListener('scroll', () => {
+            const scrollTop = modalContent.scrollTop;
+            const scrollHeight = modalContent.scrollHeight - modalContent.clientHeight;
+            const scrollPercentage = (scrollTop / scrollHeight) * 100;
+            
+            scrollBar.style.width = scrollPercentage + '%';
+            
+            // Si llegó al 95% del scroll
+            if (scrollPercentage >= 95) {
+                scrollMessage.textContent = '✅ Has leído todo el documento';
+                scrollMessage.classList.remove('text-red-600');
+                scrollMessage.classList.add('text-green-600');
+                btnCerrar.disabled = false;
+                this.modalLeido = true;
+            }
+        });
+        
+        lucide.createIcons();
+    },
+
+    closeModal() {
+        const modal = document.getElementById('modalCondiciones');
+        modal.classList.add('hidden');
+        
+        // Si ya leyó todo el modal, habilitar el input de verificación
+        if (this.modalLeido) {
+            const inputVerif = document.getElementById('inputVerificacion');
+            const mensajeScroll = document.getElementById('mensajeScroll');
+            
+            inputVerif.disabled = false;
+            mensajeScroll.textContent = '🔍 Busca la frase marcada en rojo y escríbela exactamente';
+            mensajeScroll.classList.remove('text-red-600');
+            mensajeScroll.classList.add('text-blue-600');
+            
+            // Validar frase en tiempo real (sin distinguir mayúsculas/minúsculas)
+            inputVerif.addEventListener('input', () => {
+                const valorIngresado = inputVerif.value.toUpperCase().trim();
+                const codigoEsperado = this.codigoActual.toUpperCase().trim();
+                
+                if (valorIngresado === codigoEsperado) {
+                    document.getElementById('regConsent').disabled = false;
+                    mensajeScroll.textContent = '✅ ¡Frase correcta! Ya puedes marcar el checkbox';
+                    mensajeScroll.classList.remove('text-blue-600');
+                    mensajeScroll.classList.add('text-green-600');
+                    inputVerif.classList.add('border-green-500', 'bg-green-50');
+                } else {
+                    document.getElementById('regConsent').disabled = true;
+                    inputVerif.classList.remove('border-green-500', 'bg-green-50');
+                }
+            });
+        }
+    },
+
+    // ========== REGISTRO DE NUEVO ATLETA ==========
+    async submitRegistration() {
+        // Validar campos requeridos
+        const nombre = document.getElementById('regNombre').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const fechaNac = document.getElementById('regFechaNac').value.trim();
+        const contacto = document.getElementById('regContacto').value.trim();
+        const cedula = document.getElementById('regCedula').value.trim();
+        const eps = document.getElementById('regEPS').value.trim();
+        const objetivos = document.getElementById('regObjetivos').value;
+        const consent = document.getElementById('regConsent').checked;
+
+        // Validaciones
+        if (!nombre) return this.notify("El nombre completo es requerido", "alert-circle");
+        if (!email) return this.notify("El correo electrónico es requerido", "alert-circle");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return this.notify("El correo no es válido", "alert-circle");
+        if (!fechaNac) return this.notify("La fecha de nacimiento es requerida", "alert-circle");
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(fechaNac)) return this.notify("Formato de fecha inválido (usa DD/MM/AAAA)", "alert-circle");
+        if (!contacto) return this.notify("El contacto es requerido", "alert-circle");
+        if (!cedula) return this.notify("La cédula es requerida", "alert-circle");
+        if (!eps) return this.notify("La EPS es requerida", "alert-circle");
+        if (!objetivos) return this.notify("Debes seleccionar un objetivo", "alert-circle");
+        if (!consent) return this.notify("Debes aceptar las condiciones", "alert-circle");
+
+        // Campos opcionales
+        const acudiente = document.getElementById('regAcudiente').value.trim();
+        const contactoAcudiente = document.getElementById('regContactoAcudiente').value.trim();
+        const antecedentes = document.getElementById('regAntecedentes').value.trim();
+
+        const btn = document.getElementById('registerBtn');
+        btn.innerText = "Enviando inscripción...";
+        btn.disabled = true;
+        this.showLoader();
+
+        // Enviar datos al backend (la edad se calculará en Excel)
+        const result = await this.apiCall('registrarInscripcion', {
+            nombre: nombre,
+            email: email,
+            fechaNacimiento: fechaNac,
+            contacto: contacto,
+            cedula: cedula,
+            eps: eps,
+            acudiente: acudiente,
+            contactoAcudiente: contactoAcudiente,
+            antecedentes: antecedentes,
+            objetivos: objetivos
+        }, 'POST');
+
+        this.hideLoader();
+        btn.innerText = "✅ Enviar Inscripción";
+        btn.disabled = false;
+
+        if (result.success) {
+            this.notify("¡Inscripción enviada con éxito! El equipo te contactará pronto.", "check-circle");
+            // Limpiar formulario
+            this.limpiarFormularioRegistro();
+            // Volver a la vista de login
+            setTimeout(() => {
+                this.changeView('login');
+            }, 2000);
+        } else {
+            this.notify(result.error || "Error al enviar la inscripción", "x-circle");
+        }
+    },
+
+    calcularEdad(fechaNac) {
+        const [dia, mes, anio] = fechaNac.split('/');
+        if (!dia || !mes || !anio) return 0;
+        
+        const hoy = new Date();
+        const nacimiento = new Date(anio, mes - 1, dia);
+        
+        if (isNaN(nacimiento.getTime())) return 0;
+        
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mesActual = hoy.getMonth();
+        const mesNac = nacimiento.getMonth();
+        
+        if (mesActual < mesNac || (mesActual === mesNac && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        return edad;
+    },
+
+    limpiarFormularioRegistro() {
+        document.getElementById('regNombre').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regFechaNac').value = '';
+        document.getElementById('regFechaNacHidden').value = '';
+        document.getElementById('regContacto').value = '';
+        document.getElementById('regCedula').value = '';
+        document.getElementById('regEPS').value = '';
+        document.getElementById('regAcudiente').value = '';
+        document.getElementById('regContactoAcudiente').value = '';
+        document.getElementById('regAntecedentes').value = '';
+        document.getElementById('regObjetivos').value = '';
+        document.getElementById('regConsent').checked = false;
+        document.getElementById('regConsent').disabled = true;
+        document.getElementById('inputVerificacion').value = '';
+        document.getElementById('inputVerificacion').disabled = true;
+        document.getElementById('edadCalculada').innerText = '';
+        
+        // Resetear estado de verificación
+        this.modalLeido = false;
+        const mensajeScroll = document.getElementById('mensajeScroll');
+        mensajeScroll.textContent = '⚠️ Primero debes leer todas las condiciones completamente';
+        mensajeScroll.classList.remove('text-green-600');
+        mensajeScroll.classList.add('text-red-600');
     }
 };
 
-window.onload = () => lucide.createIcons();
+// Calcular edad al cambiar fecha de nacimiento (solo para mostrar al usuario)
+window.onload = () => {
+    lucide.createIcons();
+    
+    // Event listener para el input de texto (formato dd/mm/yyyy)
+    const fechaNacInput = document.getElementById('regFechaNac');
+    const fechaNacHidden = document.getElementById('regFechaNacHidden');
+    
+    if (fechaNacInput && fechaNacHidden) {
+        // Cuando se escribe en el campo de texto
+        fechaNacInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length >= 2) value = value.slice(0,2) + '/' + value.slice(2);
+            if (value.length >= 5) value = value.slice(0,5) + '/' + value.slice(5,9);
+            this.value = value;
+            
+            // Sincronizar con el date picker oculto
+            if (value.length === 10) {
+                const [dia, mes, anio] = value.split('/');
+                if (dia && mes && anio) {
+                    fechaNacHidden.value = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+                }
+                
+                const edad = app.calcularEdad(value);
+                if (edad > 0 && edad < 120) {
+                    document.getElementById('edadCalculada').innerText = `Edad: ${edad} años`;
+                } else {
+                    document.getElementById('edadCalculada').innerText = 'Fecha inválida';
+                }
+            }
+        });
+        
+        // Cuando se selecciona desde el date picker
+        fechaNacHidden.addEventListener('change', function() {
+            if (this.value) {
+                const [anio, mes, dia] = this.value.split('-');
+                const fechaFormateada = `${dia}/${mes}/${anio}`;
+                fechaNacInput.value = fechaFormateada;
+                
+                const edad = app.calcularEdad(fechaFormateada);
+                if (edad > 0 && edad < 120) {
+                    document.getElementById('edadCalculada').innerText = `Edad: ${edad} años`;
+                } else {
+                    document.getElementById('edadCalculada').innerText = 'Fecha inválida';
+                }
+                
+                lucide.createIcons();
+            }
+        });
+    }
+};

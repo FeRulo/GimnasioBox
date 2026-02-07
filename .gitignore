@@ -10,12 +10,12 @@ __pycache__/
 *.pyc
 
 # Apps Script
-.clasp.json
-appsscript.json
-Code.gs
+gas/.clasp.json
+gas/appsscript.json
+gas/Code.gs
 
 # Configuración sensible (solo backend)
-config.private.gs
+gas/config.private.gs
 
 # Archivos de sistema
 .DS_Store
@@ -40,7 +40,9 @@ npm-debug.log*
 *.xlsx
 *.xls
 *.csv
-gimnasio_box.xlsx
+generated/*
+!generated/.gitkeep
+!generated/README.md
 
 # Build
 dist/

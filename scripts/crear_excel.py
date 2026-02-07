@@ -19,7 +19,9 @@ def crear_excel_gimnasio():
     hojas = {
         'Clientes': [
             'Documento', 'Nombre', 'Email', 'Plan_Semanal', 
-            'Creditos_Usados', 'Membresia_Anual', 'Estado'
+            'Creditos_Usados', 'Membresia_Anual', 'Estado',
+            'Fecha_Nacimiento', 'Edad', 'Contacto', 'EPS',
+            'Acudiente', 'Contacto_Acudiente', 'Antecedentes', 'Objetivos'
         ],
         'Horarios': [
             'ID_Clase', 'Tipo', 'Coach', 'Fecha', 'Hora', 
@@ -71,7 +73,7 @@ def crear_excel_gimnasio():
             ws.column_dimensions[column].width = adjusted_width
     
     # Guardar el archivo
-    nombre_archivo = 'gimnasio_box.xlsx'
+    nombre_archivo = '../generated/gimnasio_box.xlsx'
     wb.save(nombre_archivo)
     print(f"✅ Archivo '{nombre_archivo}' creado exitosamente!")
     print(f"📋 Hojas creadas: {', '.join(hojas.keys())}")
@@ -85,14 +87,14 @@ def poblar_datos_dummy(wb):
     # ========== CLIENTES ==========
     ws_clientes = wb['Clientes']
     clientes_dummy = [
-        ['12345678', 'Juan Pérez', 'juan.perez@mail.com', 3, None, 'S', 'Activo'],
-        ['87654321', 'María López', 'maria.lopez@mail.com', 5, None, 'S', 'Activo'],
-        ['45678912', 'Carlos Rodríguez', 'carlos.r@mail.com', 3, None, 'S', 'Activo'],
-        ['78912345', 'Ana García', 'ana.garcia@mail.com', 4, None, 'N', 'Activo'],
-        ['11223344', 'Pedro Martínez', 'pedro.m@mail.com', 5, None, 'S', 'Activo'],
-        ['55667788', 'Laura Sánchez', 'laura.s@mail.com', 3, None, 'S', 'Activo'],
-        ['99887766', 'Diego Torres', 'diego.t@mail.com', 4, None, 'S', 'Activo'],
-        ['22334455', 'Sofia Ramírez', 'sofia.r@mail.com', 5, None, 'S', 'Activo'],
+        ['12345678', 'Juan Pérez', 'juan.perez@mail.com', 3, None, 'S', 'Activo', '1990-05-15', None, '3001234567', 'Salud Total', '', '', '', 'Funcional'],
+        ['87654321', 'María López', 'maria.lopez@mail.com', 5, None, 'S', 'Activo', '1992-08-22', None, '3007654321', 'Compensar', '', '', '', 'Perder peso'],
+        ['45678912', 'Carlos Rodríguez', 'carlos.r@mail.com', 3, None, 'S', 'Activo', '1988-03-10', None, '3009876543', 'Sura', '', '', '', 'Aprender boxeo'],
+        ['78912345', 'Ana García', 'ana.garcia@mail.com', 4, None, 'N', 'Activo', '1995-11-30', None, '3002345678', 'Nueva EPS', '', '', '', 'Aumentar masa muscular'],
+        ['11223344', 'Pedro Martínez', 'pedro.m@mail.com', 5, None, 'S', 'Activo', '1985-07-18', None, '3003456789', 'Sanitas', '', '', 'Hipertensión controlada', 'Funcional'],
+        ['55667788', 'Laura Sánchez', 'laura.s@mail.com', 3, None, 'S', 'Activo', '1998-12-05', None, '3004567890', 'Famisanar', '', '', '', 'Perder peso'],
+        ['99887766', 'Diego Torres', 'diego.t@mail.com', 4, None, 'S', 'Activo', '1993-04-25', None, '3005678901', 'Salud Total', '', '', '', 'Aprender boxeo'],
+        ['22334455', 'Sofia Ramírez', 'sofia.r@mail.com', 5, None, 'S', 'Activo', '1991-09-14', None, '3006789012', 'Compensar', '', '', '', 'Funcional'],
     ]
     
     for fila, datos in enumerate(clientes_dummy, start=2):
@@ -102,6 +104,11 @@ def poblar_datos_dummy(wb):
                 documento = datos[0]
                 # Fórmula que cuenta reservas activas del documento
                 formula = f'=COUNTIFS(Reservas!$B:$B,A{fila},Reservas!$E:$E,"Activa")'
+                ws_clientes.cell(row=fila, column=col, value=formula)
+            # Para la columna I (Edad), insertar fórmula que calcula años desde fecha de nacimiento
+            elif col == 9:  # Columna I (Edad)
+                # Fórmula DATEDIF para calcular edad en años
+                formula = f'=DATEDIF(H{fila},TODAY(),"Y")'
                 ws_clientes.cell(row=fila, column=col, value=formula)
             else:
                 ws_clientes.cell(row=fila, column=col, value=valor)

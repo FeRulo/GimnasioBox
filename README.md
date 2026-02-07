@@ -43,17 +43,36 @@ Sistema web para gestión de reservas de clases de CrossFit/Functional Training 
 
 ```
 GimnasioBox/
-├── 📄 index.html              # Interfaz principal
-├── 📄 app.js                  # Lógica del frontend
-├── 📄 config.js.example       # Template de configuración
-├── 📄 apps-script-backend.js  # Backend para Apps Script
-├── 📄 crear_excel.py          # Script para crear estructura Excel
-├── 📄 internationalBox.jpeg   # Logo del gimnasio
-├── 📚 docs/
-│   ├── SETUP-CLASP.md        # Guía desarrollo local con clasp
-│   ├── OPTIMIZACIONES.md     # Optimizaciones implementadas
-│   └── DESARROLLO-LOCAL.md   # Testing local con Node.js
-└── 📄 README.md              # Este archivo
+├── index.html                 # Interfaz principal (raíz)
+├── package.json              # Configuración del proyecto
+├── LICENSE                   # Licencia del proyecto
+├── README.md                 # Este archivo
+│
+├── 📂 src/                   # Código fuente JavaScript
+│   ├── app.js               # Lógica principal del frontend
+│   └── config.js            # Configuración de la API
+│
+├── 📂 gas/                   # Google Apps Script (Backend)
+│   ├── Code.gs              # Código del backend
+│   ├── appsscript.json      # Configuración de Apps Script
+│   ├── config.private.gs    # Configuración privada (no en Git)
+│   └── config.private.example.gs  # Ejemplo de configuración
+│
+├── 📂 scripts/               # Scripts de utilidades
+│   ├── crear_excel.py       # Genera estructura Excel base
+│   └── setup.sh             # Script de instalación
+│
+├── 📂 images/                # Recursos gráficos
+│   └── internationalBox.jpeg  # Logo del gimnasio
+│
+├── 📂 generated/             # Archivos generados (no en Git)
+│   └── gimnasio_box.xlsx    # Excel generado por script
+│
+└── 📂 docs/                  # Documentación
+    ├── SETUP-CLASP.md       # Guía desarrollo local con clasp
+    ├── GITHUB-SETUP.md      # Configuración GitHub
+    ├── GITHUB-PAGES.md      # Deploy en GitHub Pages
+    └── INSCRIPCIONES.md     # Sistema de inscripciones
 ```
 
 ## 🚀 Instalación
@@ -68,19 +87,26 @@ cd GimnasioBox
 ### 2. Configurar Variables de Entorno
 
 ```bash
-# Copiar el archivo de ejemplo
-cp config.js.example config.js
+# Frontend: Copiar el archivo de configuración
+cp src/config.js src/config.js.local
 
-# Editar config.js y agregar:
-# - SHEET_ID: ID de tu Google Sheets
+# Editar src/config.js y agregar:
 # - API_URL: URL de tu Web App desplegada
+
+# Backend: Copiar configuración privada
+cp gas/config.private.example.gs gas/config.private.gs
+
+# Editar gas/config.private.gs y agregar:
+# - SHEET_ID: ID de tu Google Sheets
 ```
 
 ### 3. Crear la Base de Datos (Google Sheets)
 
 #### Opción A: Usar el script Python
 ```bash
+cd scripts
 python3 crear_excel.py
+# El archivo se generará en generated/gimnasio_box.xlsx
 ```
 
 #### Opción B: Manual
