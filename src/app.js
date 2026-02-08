@@ -12,8 +12,8 @@ const app = {
         document.getElementById('loader').classList.add('hidden');
     },
 
-    // ========== UTILIDADES DE API (JSONP para evitar CORS) ==========
-    async apiCall(action, params = {}, method = 'GET') {
+    // ========== UTILIDADES DE API ==========
+    async apiCall(action, params = {}) {
         try {
             // Verificar si la API está configurada
             if (!CONFIG.API_URL || CONFIG.API_URL === 'TU_URL_DE_WEB_APP_AQUI') {
@@ -22,53 +22,27 @@ const app = {
                 return { success: false, error: 'API no configurada' };
             }
 
-            // Usar JSONP para evitar problemas de CORS con Google Apps Script
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                
-                // Crear función global de callback
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    if (document.body.contains(script)) {
-                        document.body.removeChild(script);
-                    }
-                    resolve(data);
-                };
-                
-                // Construir URL con parámetros
-                let url = `${CONFIG.API_URL}?action=${action}&callback=${callbackName}`;
-                
-                // Agregar parámetros adicionales
-                Object.keys(params).forEach(key => {
-                    url += `&${key}=${encodeURIComponent(params[key])}`;
-                });
-                
-                // Crear script tag para JSONP
-                const script = document.createElement('script');
-                script.src = url;
-                script.onerror = function(error) {
-                    delete window[callbackName];
-                    if (document.body.contains(script)) {
-                        document.body.removeChild(script);
-                    }
-                    reject(new Error('Error de red. Verifica:\n1. Que el Apps Script esté desplegado\n2. Que la URL en config.js sea correcta\n3. Que el Apps Script tenga el código actualizado con soporte JSONP'));
-                };
-                
-                document.body.appendChild(script);
-                
-                // Timeout de 30 segundos
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                        if (document.body.contains(script)) {
-                            document.body.removeChild(script);
-                        }
-                        reject(new Error('Timeout: el servidor tardó demasiado en responder'));
-                    }
-                }, 30000);
+            // Usar text/plain para evitar preflight OPTIONS
+            // Google Apps Script no soporta OPTIONS, pero sí POST con text/plain
+            const response = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain', // ← Evita preflight CORS
+                },
+                body: JSON.stringify({
+                    action: action,
+                    ...params
+                })
             });
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            return await response.json();
         } catch (error) {
-            this.notify(error.message || CONFIG.MESSAGES.ERROR_CONEXION, 'wifi-off');
+            console.error('Error en apiCall:', error);
+            this.notify(error.message || 'Error de conexión', 'wifi-off');
             return { success: false, error: error.message };
         }
     },
@@ -402,33 +376,97 @@ const app = {
         const file = document.getElementById('payFile').files[0];   
         if(!file) return this.notify("Debes adjuntar la imagen del pago", "camera");
 
+        // Validar que sea una imagen
+        if (!file.type.startsWith('image/')) {
+            return this.notify("Solo se permiten archivos de imagen", "alert-circle");
+        }
+
+        // Validar tamaño máximo (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            return this.notify("La imagen no puede superar 5MB", "alert-circle");
+        }
+
         const tipoPago = document.getElementById('payType').value;
         const btn = document.getElementById('sendPayBtn');
-        btn.innerText = "Subiendo...";
+        btn.innerText = "Subiendo imagen...";
         btn.disabled = true;
         this.showLoader();
 
-        // TODO: Implementar subida de imagen a Google Drive
-        // Por ahora, simularemos con un link de ejemplo
-        const linkSoporte = `https://drive.google.com/ejemplo/${Date.now()}`;
-        
-        const result = await this.apiCall('registrarPago', {
-            documento: this.user.doc,
-            tipoPago: tipoPago === 'membresia' ? 'Inscripción Membresía' : 'Mensualidad',
-            linkSoporte: linkSoporte
-        }, 'POST');
-        
-        if (result.success) {
-            this.notify("Soporte enviado. El coach validará tu pago.", "check-circle");
-            document.getElementById('payFile').value = '';
-            this.changeView('main');
-        } else {
-            this.notify(result.error || "Error al enviar el pago", "x-circle");
+        try {
+            // Convertir imagen a base64
+            const base64 = await this.fileToBase64(file);
+            
+            const result = await this.apiCall('registrarPago', {
+                documento: this.user.doc,
+                tipoPago: tipoPago === 'membresia' ? 'Inscripción Membresía' : 'Mensualidad',
+                imagenBase64: base64,
+                nombreArchivo: file.name,
+                mimeType: file.type
+            }, 'POST');
+            
+            if (result.success) {
+                this.notify("Soporte enviado. El coach validará tu pago.", "check-circle");
+                document.getElementById('payFile').value = '';
+                this.changeView('main');
+            } else {
+                console.error('Error al enviar pago:', result.error);
+                this.notify(result.error || "Error al enviar el pago", "x-circle");
+            }
+        } catch (error) {
+            console.log(error);
+            this.notify("Error al procesar la imagen: " + error.message, "x-circle");
         }
         
         this.hideLoader();
         btn.innerText = "Enviar Comprobante";
         btn.disabled = false;
+    },
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                // Extraer solo la parte base64 (sin el prefijo data:image/...;base64,)
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    },
+
+    mostrarNombreArchivo(input) {
+        const preview = document.getElementById('payFilePreview');
+        const fileName = document.getElementById('payFileName');
+        const fileSize = document.getElementById('payFileSize');
+        
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            const isValid = file.size <= 5 * 1024 * 1024;
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = `${sizeMB} MB ${isValid ? '' : '- Excede el límite de 5MB'}`;
+            
+            // Cambiar colores según validación
+            if (isValid) {
+                preview.querySelector('div').className = 'flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl';
+                fileSize.className = 'text-blue-600 text-[10px]';
+            } else {
+                preview.querySelector('div').className = 'flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl';
+                fileSize.className = 'text-red-600 text-[10px] font-bold';
+            }
+            
+            preview.classList.remove('hidden');
+            lucide.createIcons();
+        } else {
+            preview.classList.add('hidden');
+        }
+    },
+
+    limpiarArchivo() {
+        document.getElementById('payFile').value = '';
+        document.getElementById('payFilePreview').classList.add('hidden');
     },
 
     notify(msg, iconName) {

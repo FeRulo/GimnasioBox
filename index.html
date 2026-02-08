@@ -196,13 +196,62 @@
                 <div class="w-8"></div>
             </div>
 
-            <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 mb-6 text-center">
-                <h3 class="font-bold mb-2">Paga con Nequi</h3>
-                <p class="text-xs text-gray-500 mb-6">Haz tu transferencia y adjunta la captura del comprobante abajo.</p>
-                <a href="https://recarga.nequi.com.co/" target="_blank" 
-                    class="inline-flex items-center gap-3 bg-[#ff0092] text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-pink-200">
-                    Ir a Nequi <i data-lucide="external-link" class="w-4 h-4"></i>
-                </a>
+            <div class="bg-gradient-to-br from-pink-50 to-purple-50 p-6 rounded-3xl border-2 border-pink-200 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-[#ff0092] rounded-full flex items-center justify-center">
+                        <span class="text-white text-2xl font-black">N</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-lg">Paga con Nequi</h3>
+                        <p class="text-xs text-gray-600">Transfiere al siguiente número</p>
+                    </div>
+                </div>
+                
+                <!-- Datos de Nequi - Hardcoded por seguridad -->
+                <div class="bg-white rounded-2xl p-4 mb-4 border-2 border-pink-300 shadow-lg">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-1 text-center">Titular de la cuenta</p>
+                    <p class="text-base font-black text-center text-navy-900 mb-3 select-all">Hailer Adolfo Joya Cardona</p>
+                    
+                    <div class="h-[1px] bg-gray-200 my-3"></div>
+                    
+                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-1 text-center">Número de Nequi</p>
+                    <p class="text-3xl font-black text-center text-navy-900 tracking-wider select-all" id="nequiNumber">312 727 9159</p>
+                    <button onclick="navigator.clipboard.writeText('3127279159').then(() => app.notify('Número copiado al portapapeles', 'check-circle'))" 
+                        class="w-full mt-3 bg-navy-900 text-white py-2 rounded-xl text-xs font-bold hover:bg-navy-800 transition-all">
+                        📋 Copiar Número
+                    </button>
+                </div>
+
+                <!-- Alerta de Seguridad -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4 rounded-lg">
+                    <p class="text-xs font-bold text-yellow-800 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                        ⚠️ Verifica los datos antes de transferir
+                    </p>
+                    <p class="text-xs text-yellow-700 mt-1">
+                        <strong>Titular:</strong> Hailer Adolfo Joya Cardona<br>
+                        <strong>Número:</strong> <span class="font-black">3127279159</span><br>
+                        Si ves datos diferentes, <strong class="text-red-600">NO realices el pago</strong> y reporta inmediatamente.
+                    </p>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="nequi://send?phone=3127279159" 
+                        class="inline-flex items-center justify-center gap-2 bg-[#ff0092] text-white px-4 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-pink-600 transition-all">
+                        <i data-lucide="smartphone" class="w-4 h-4"></i>
+                        Abrir App
+                    </a>
+                    <a href="https://recarga.nequi.com.co/" target="_blank" 
+                        class="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-purple-700 transition-all">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                        Sitio Web
+                    </a>
+                </div>
+
+                <p class="text-[10px] text-gray-500 mt-3 text-center italic">
+                    Después de transferir, adjunta la captura del comprobante abajo ⬇️
+                </p>
             </div>
 
             <div class="space-y-4">
@@ -216,9 +265,21 @@
                 <div>
                     <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Captura del Soporte</label>
                     <div class="relative w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-all">
-                        <input type="file" id="payFile" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <input type="file" id="payFile" accept="image/*" onchange="app.mostrarNombreArchivo(this)" class="absolute inset-0 opacity-0 cursor-pointer">
                         <i data-lucide="camera" class="text-gray-300 mb-2"></i>
                         <span class="text-[10px] font-bold text-gray-400 uppercase">Subir Imagen</span>
+                    </div>
+                    <div id="payFilePreview" class="mt-2 text-xs font-medium hidden">
+                        <div class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                            <i data-lucide="file-image" class="w-4 h-4 text-blue-600 flex-shrink-0"></i>
+                            <div class="flex-grow min-w-0">
+                                <p id="payFileName" class="text-blue-900 font-semibold truncate"></p>
+                                <p id="payFileSize" class="text-blue-600 text-[10px]"></p>
+                            </div>
+                            <button onclick="app.limpiarArchivo()" type="button" class="p-1 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0">
+                                <i data-lucide="x" class="w-4 h-4 text-blue-600"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <button onclick="app.sendPayment()" id="sendPayBtn" class="w-full bg-navy-900 text-white py-4 rounded-2xl font-bold mt-4 shadow-lg shadow-navy-900/20">
