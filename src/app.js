@@ -330,7 +330,7 @@ const app = {
         const session = this.sessions.find(s => s.id === idClase);
         if(!session) return this.notify("Clase no encontrada", "x-circle");
         if(session.spots === 0) return this.notify("Esta clase ya no tiene cupos", "x-circle");
-        if(this.user.used >= this.user.credits) return this.notify("Ya agotaste tus créditos semanales", "lock");
+        if(this.user.creditsAvailable <= 0) return this.notify("No tienes créditos disponibles", "lock");
         if(this.userReservations.find(r => r.id === idClase)) return this.notify("Ya estás inscrito en esta clase", "info");
 
         this.showLoader();
@@ -341,11 +341,14 @@ const app = {
         }, 'POST');
         
         if (result.success) {
+            // Actualizar créditos localmente
+            this.user.creditsUsed++;
+            this.user.creditsAvailable--;
+            this.syncUIBasic();
+            
             // Recargar solo los horarios y reservas
             await this.loadHorarios();
             await this.loadReservas();
-            this.user.used++;
-            this.syncUIBasic();
             this.notify("¡Reserva exitosa! Te esperamos.", "check");
             this.changeView('main');
         } else {
@@ -365,11 +368,14 @@ const app = {
         }, 'POST');
         
         if (result.success) {
+            // Actualizar créditos localmente
+            this.user.creditsUsed--;
+            this.user.creditsAvailable++;
+            this.syncUIBasic();
+            
             // Recargar solo los horarios y reservas
             await this.loadHorarios();
             await this.loadReservas();
-            this.user.used--;
-            this.syncUIBasic();
             this.notify("Reserva cancelada correctamente", "trash-2");
         } else {
             this.notify(result.error || "Error al cancelar", "x-circle");
