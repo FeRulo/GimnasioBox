@@ -66,10 +66,14 @@ const app = {
                 doc: cliente.documento,
                 name: cliente.nombre,
                 email: cliente.email,
-                credits: cliente.planSemanal,
-                used: cliente.creditosUsados,
-                membership: cliente.membresiaAnual === 'S' ? 'Membresía Activa' : 'Sin Membresía',
-                estado: cliente.estado
+                tieneMembresia: cliente.tieneMembresiaAnual === 'SI',
+                vencimientoMembresia: cliente.vencimientoMembresia,
+                planActivo: cliente.tipoPlan || 'Sin Plan',
+                creditsWeekly: cliente.creditosSemanales || 0,
+                creditsUsed: cliente.creditosUsados || 0,
+                creditsAvailable: cliente.creditosDisponibles || 0,
+                estado: cliente.estado,
+                puedeReservar: cliente.puedeReservar
             };
             
             // Solo actualizar UI básica, sin cargar datos adicionales
@@ -143,9 +147,17 @@ const app = {
 
     syncUIBasic() {
         // Solo actualiza la UI básica sin cargar datos de la API
-        document.getElementById('creditsCount').innerText = this.user.used;
-        document.getElementById('creditsLimit').innerText = this.user.credits;
-        document.getElementById('badgeMembresia').innerText = this.user.membership;
+        document.getElementById('creditsCount').innerText = this.user.creditsUsed;
+        document.getElementById('creditsLimit').innerText = this.user.creditsWeekly;
+        
+        // Badge de membresía + plan
+        let badgeText = '';
+        if (this.user.tieneMembresia) {
+            badgeText = `Membresía Activa | ${this.user.planActivo}`;
+        } else {
+            badgeText = 'Sin Membresía';
+        }
+        document.getElementById('badgeMembresia').innerText = badgeText;
         document.getElementById('userTag').innerText = "ID: " + this.user.doc;
     },
 
@@ -180,6 +192,8 @@ const app = {
                 this.loadHorarios();
             } else if (viewId === 'sessions') {
                 this.loadReservas();
+            } else if (viewId === 'payments') {
+                this.setupPaymentOptions();
             }
             
             lucide.createIcons();
@@ -372,7 +386,76 @@ const app = {
         return diffHrs >= 3;
     },
 
+    setupPaymentOptions() {
+        const payTypeSelect = document.getElementById('payType');
+        const options = payTypeSelect.querySelectorAll('option');
+        const warningDiv = document.getElementById('paymentWarning');
+        
+        // Verificar si tiene membresía activa
+        const tieneMembresia = this.user && this.user.tieneMembresia;
+        
+        options.forEach(option => {
+            const value = option.value;
+            // Deshabilitar planes mensuales si no tiene membresía
+            if (value.startsWith('Plan_Mensual_')) {
+                if (!tieneMembresia) {
+                    option.disabled = true;
+                    // Solo agregar texto si no está ya presente
+                    if (!option.textContent.includes('(Requiere membresía activa)')) {
+                        option.textContent = option.textContent.replace(' - $', ' (Requiere membresía activa) - $');
+                    }
+                } else {
+                    option.disabled = false;
+                    // Remover texto si está presente
+                    if (option.textContent.includes('(Requiere membresía activa)')) {
+                        option.textContent = option.textContent.replace(' (Requiere membresía activa)', '');
+                    }
+                }
+            }
+        });
+        
+        // Mostrar u ocultar mensaje de advertencia
+        if (warningDiv) {
+            if (!tieneMembresia) {
+                warningDiv.classList.remove('hidden');
+            } else {
+                warningDiv.classList.add('hidden');
+            }
+        }
+        
+        lucide.createIcons();
+    },
+
+    updatePaymentAmount() {
+        const tipoPago = document.getElementById('payType').value;
+        const amountContainer = document.getElementById('payAmountContainer');
+        const amountDisplay = document.getElementById('payAmountDisplay');
+        
+        const montos = {
+            'Inscripcion_Membresia_Anual': 35000,
+            'Plan_Mensual_1dia': 115000,
+            'Plan_Mensual_2dias': 145000,
+            'Plan_Mensual_3dias': 175000,
+            'Plan_Mensual_4dias': 205000,
+            'Plan_Mensual_5dias': 235000,
+            'Clase_Individual': 45000
+        };
+        
+        if (tipoPago && montos[tipoPago]) {
+            amountContainer.classList.remove('hidden');
+            amountDisplay.innerText = '$' + montos[tipoPago].toLocaleString('es-CO');
+        } else {
+            amountContainer.classList.add('hidden');
+            amountDisplay.innerText = '$0';
+        }
+        
+        lucide.createIcons();
+    },
+
     async sendPayment() {
+        const tipoPago = document.getElementById('payType').value;
+        if(!tipoPago) return this.notify("Debes seleccionar el tipo de pago", "alert-circle");
+        
         const file = document.getElementById('payFile').files[0];   
         if(!file) return this.notify("Debes adjuntar la imagen del pago", "camera");
 
@@ -385,8 +468,20 @@ const app = {
         if (file.size > 5 * 1024 * 1024) {
             return this.notify("La imagen no puede superar 5MB", "alert-circle");
         }
+        
+        // Obtener monto según tipo de pago
+        const montos = {
+            'Inscripcion_Membresia_Anual': 35000,
+            'Plan_Mensual_1dia': 115000,
+            'Plan_Mensual_2dias': 145000,
+            'Plan_Mensual_3dias': 175000,
+            'Plan_Mensual_4dias': 205000,
+            'Plan_Mensual_5dias': 235000,
+            'Clase_Individual': 45000
+        };
+        
+        const monto = montos[tipoPago] || 0;
 
-        const tipoPago = document.getElementById('payType').value;
         const btn = document.getElementById('sendPayBtn');
         btn.innerText = "Subiendo imagen...";
         btn.disabled = true;
@@ -398,7 +493,8 @@ const app = {
             
             const result = await this.apiCall('registrarPago', {
                 documento: this.user.doc,
-                tipoPago: tipoPago === 'membresia' ? 'Inscripción Membresía' : 'Mensualidad',
+                tipoPago: tipoPago,
+                monto: monto,
                 imagenBase64: base64,
                 nombreArchivo: file.name,
                 mimeType: file.type
@@ -406,7 +502,7 @@ const app = {
             
             if (result.success) {
                 this.notify("Soporte enviado. El coach validará tu pago.", "check-circle");
-                document.getElementById('payFile').value = '';
+                this.limpiarArchivo();
                 this.changeView('main');
             } else {
                 console.error('Error al enviar pago:', result.error);
@@ -467,6 +563,10 @@ const app = {
     limpiarArchivo() {
         document.getElementById('payFile').value = '';
         document.getElementById('payFilePreview').classList.add('hidden');
+        document.getElementById('payType').value = '';
+        document.getElementById('payAmountContainer').classList.add('hidden');
+        document.getElementById('payAmountDisplay').innerText = '$0';
+        lucide.createIcons();
     },
 
     notify(msg, iconName) {
@@ -609,11 +709,18 @@ const app = {
         if (!cedula) return this.notify("La cédula es requerida", "alert-circle");
         if (!eps) return this.notify("La EPS es requerida", "alert-circle");
         if (!objetivos) return this.notify("Debes seleccionar un objetivo", "alert-circle");
+        
+        // Validar campo "Otro" si fue seleccionado
+        const objetivoOtro = document.getElementById('regObjetivoOtro').value.trim();
+        if (objetivos === 'Otro' && !objetivoOtro) {
+            return this.notify("Debes especificar tu objetivo personalizado", "alert-circle");
+        }
+        
         if (!consent) return this.notify("Debes aceptar las condiciones", "alert-circle");
 
         // Campos opcionales
-        const acudiente = document.getElementById('regAcudiente').value.trim();
-        const contactoAcudiente = document.getElementById('regContactoAcudiente').value.trim();
+        const contactoEmergencia = document.getElementById('regContactoEmergencia').value.trim();
+        const telEmergencia = document.getElementById('regTelEmergencia').value.trim();
         const antecedentes = document.getElementById('regAntecedentes').value.trim();
 
         const btn = document.getElementById('registerBtn');
@@ -629,10 +736,11 @@ const app = {
             contacto: contacto,
             cedula: cedula,
             eps: eps,
-            acudiente: acudiente,
-            contactoAcudiente: contactoAcudiente,
+            contactoEmergencia: contactoEmergencia,
+            telEmergencia: telEmergencia,
             antecedentes: antecedentes,
-            objetivos: objetivos
+            objetivos: objetivos,
+            objetivoOtro: objetivoOtro
         }, 'POST');
 
         this.hideLoader();
@@ -679,10 +787,12 @@ const app = {
         document.getElementById('regContacto').value = '';
         document.getElementById('regCedula').value = '';
         document.getElementById('regEPS').value = '';
-        document.getElementById('regAcudiente').value = '';
-        document.getElementById('regContactoAcudiente').value = '';
+        document.getElementById('regContactoEmergencia').value = '';
+        document.getElementById('regTelEmergencia').value = '';
         document.getElementById('regAntecedentes').value = '';
         document.getElementById('regObjetivos').value = '';
+        document.getElementById('regObjetivoOtro').value = '';
+        document.getElementById('divObjetivoOtro').classList.add('hidden');
         document.getElementById('regConsent').checked = false;
         document.getElementById('regConsent').disabled = true;
         document.getElementById('inputVerificacion').value = '';
@@ -695,6 +805,20 @@ const app = {
         mensajeScroll.textContent = '⚠️ Primero debes leer todas las condiciones completamente';
         mensajeScroll.classList.remove('text-green-600');
         mensajeScroll.classList.add('text-red-600');
+    },
+
+    toggleObjetivoOtro() {
+        const objetivos = document.getElementById('regObjetivos').value;
+        const divOtro = document.getElementById('divObjetivoOtro');
+        const inputOtro = document.getElementById('regObjetivoOtro');
+        
+        if (objetivos === 'Otro') {
+            divOtro.classList.remove('hidden');
+            inputOtro.focus();
+        } else {
+            divOtro.classList.add('hidden');
+            inputOtro.value = '';
+        }
     }
 };
 
