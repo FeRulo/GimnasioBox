@@ -374,7 +374,7 @@
             <div class="max-w-7xl mx-auto space-y-4">
                 <!-- Configuración General -->
                 <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div>
                             <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Semana (Lunes)</label>
                             <input type="date" id="adminSemanaInicio" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:ring-2 focus:ring-purple-600">
@@ -382,6 +382,13 @@
                         <div>
                             <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Coach</label>
                             <input type="text" id="adminCoachDefault" value="Hailer" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:ring-2 focus:ring-purple-600">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Duración</label>
+                            <select id="adminDuracionDefault" onchange="app.actualizarTamañoBloques()" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="60">1 hora</option>
+                                <option value="90" selected>1.5 horas</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Cupos por Clase</label>
@@ -434,100 +441,11 @@
                                 </tr>
                             </thead>
                             <tbody id="calendarBody">
-                                <!-- Horarios: 5:30 AM - 8:30 PM en bloques de 90 min (sin 12-1 PM) -->
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">05:30</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '05:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">07:00</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '07:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">08:30</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '08:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">10:00</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '10:00 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">11:30</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '11:30 AM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <!-- ALMUERZO 12-1 PM -->
-                                <tr class="border-b border-gray-300 bg-gray-200">
-                                    <td colspan="7" class="p-2 text-center text-[10px] font-bold text-gray-500 uppercase">⏸️ Almuerzo (12:00 - 1:00 PM)</td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">01:00</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '01:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">02:30</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '02:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">04:00</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '04:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">05:30</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '05:30 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">07:00</td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '07:00 PM')" class="h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                                <!-- El calendario se genera dinámicamente con JavaScript -->
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-sm text-gray-400">
+                                        Cargando calendario...
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

@@ -268,6 +268,58 @@ const app = {
     },
 
     // ========== CALENDARIO SEMANAL DE ADMINISTRACIÓN ==========
+    actualizarTamañoBloques() {
+        const duracion = document.getElementById('adminDuracionDefault').value;
+        
+        // Regenerar el calendario con los horarios apropiados
+        this.generarCalendarioSemanal(duracion);
+        
+        this.notify(`Bloques ajustados a ${duracion === '60' ? '1 hora' : '1.5 horas'}`, 'settings');
+    },
+
+    generarCalendarioSemanal(duracion = '90') {
+        const container = document.getElementById('calendarBody');
+        
+        // Definir horarios según duración
+        const horarios = duracion === '60' 
+            ? ['05:30', '06:30', '07:30', '08:30', '09:30', '10:30', '11:30', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00']
+            : ['05:30', '07:00', '08:30', '10:00', '11:30', '01:00', '02:30', '04:00', '05:30', '07:00'];
+        
+        const horariosCompletos = duracion === '60'
+            ? ['05:30 AM', '06:30 AM', '07:30 AM', '08:30 AM', '09:30 AM', '10:30 AM', '11:30 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM']
+            : ['05:30 AM', '07:00 AM', '08:30 AM', '10:00 AM', '11:30 AM', '01:00 PM', '02:30 PM', '04:00 PM', '05:30 PM', '07:00 PM'];
+        
+        const alturaBloque = duracion === '60' ? 'h-8' : 'h-12';
+        
+        let html = '';
+        let insertarAlmuerzo = false;
+        
+        horarios.forEach((hora, index) => {
+            // Insertar fila de almuerzo antes de la 1:00 PM
+            if (hora === '01:00' && !insertarAlmuerzo) {
+                html += `
+                    <tr class="border-b border-gray-300 bg-gray-200">
+                        <td colspan="7" class="p-2 text-center text-[10px] font-bold text-gray-500 uppercase">⏸️ Almuerzo (12:00 - 1:00 PM)</td>
+                    </tr>`;
+                insertarAlmuerzo = true;
+            }
+            
+            html += `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">${hora}</td>
+                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                </tr>`;
+        });
+        
+        container.innerHTML = html;
+        this.actualizarContadorClases();
+    },
+
     toggleClaseTipo(element, diaIndex, hora) {
         const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
         const estilos = [
@@ -288,13 +340,24 @@ const app = {
         // Actualizar atributo
         element.setAttribute('data-tipo', nuevoTipo);
         
-        // Limpiar estilos anteriores
+        // Preservar altura actual (h-8 o h-12)
+        const tieneH8 = element.classList.contains('h-8');
+        const tieneH12 = element.classList.contains('h-12');
+        
+        // Limpiar estilos anteriores de border y background
         estilos.forEach(estilo => {
             element.classList.remove(estilo.border, estilo.bg);
         });
         
         // Aplicar nuevos estilos
-        element.classList.add(estilos[nuevoIndex].border, estilos[nuevoIndex].bg);
+        element.classList.add('border-2', estilos[nuevoIndex].border, estilos[nuevoIndex].bg);
+        
+        // Restaurar altura si fue removida
+        if (tieneH8 && !element.classList.contains('h-8')) {
+            element.classList.add('h-8');
+        } else if (tieneH12 && !element.classList.contains('h-12')) {
+            element.classList.add('h-12');
+        }
         
         // Actualizar contador
         this.actualizarContadorClases();
@@ -313,6 +376,7 @@ const app = {
 
         const fechaInicio = document.getElementById('adminSemanaInicio').value;
         const coach = document.getElementById('adminCoachDefault').value;
+        const duracion = document.getElementById('adminDuracionDefault').value;
         const cuposMax = parseInt(document.getElementById('adminCuposDefault').value);
 
         if (!fechaInicio) {
@@ -325,88 +389,70 @@ const app = {
             return this.notify("La fecha debe ser un lunes", "alert-circle");
         }
 
-        if (!coach || !cuposMax) {
-            return this.notify("Completa el coach y los cupos", "alert-circle");
+        if (!coach) {
+            return this.notify("Ingresa el nombre del coach", "alert-circle");
         }
 
-        // Recopilar todas las celdas con clases seleccionadas
-        const celdas = document.querySelectorAll('#calendarBody div[data-tipo]');
+        // Obtener horarios según duración seleccionada
+        const horariosCompletos = duracion === '60'
+            ? ['05:30 AM', '06:30 AM', '07:30 AM', '08:30 AM', '09:30 AM', '10:30 AM', '11:30 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM']
+            : ['05:30 AM', '07:00 AM', '08:30 AM', '10:00 AM', '11:30 AM', '01:00 PM', '02:30 PM', '04:00 PM', '05:30 PM', '07:00 PM'];
+        
         const clases = [];
-
-        celdas.forEach((celda, index) => {
-            const tipo = celda.getAttribute('data-tipo');
-            if (tipo && tipo !== '') {
-                // Obtener la fila (hora) y columna (día)
-                const fila = celda.closest('tr');
-                const hora = fila.querySelector('td:first-child').textContent.trim();
-                const diaIndex = Array.from(celda.closest('tr').querySelectorAll('td > div')).indexOf(celda);
+        const rows = document.querySelectorAll('#calendarBody tr:not(.bg-gray-200)');
+        
+        rows.forEach((row, rowIndex) => {
+            const celdas = row.querySelectorAll('td:not(.sticky)');
+            celdas.forEach((celda, diaIndex) => {
+                const bloque = celda.querySelector('div[data-tipo]');
+                const tipo = bloque?.getAttribute('data-tipo');
                 
-                // Calcular fecha
-                const fechaClase = new Date(fecha);
-                fechaClase.setDate(fechaClase.getDate() + diaIndex);
-                const fechaStr = fechaClase.toISOString().split('T')[0];
-                
-                clases.push({
-                    fecha: fechaStr,
-                    hora: hora,
-                    tipo: tipo,
-                    coach: coach,
-                    duracion: '90 min',
-                    cuposMax: cuposMax
-                });
-            }
+                if (tipo && tipo !== '') {
+                    // Calcular fecha exacta
+                    const fechaClase = new Date(fecha);
+                    fechaClase.setDate(fechaClase.getDate() + diaIndex);
+                    const fechaStr = fechaClase.toISOString().split('T')[0];
+                    
+                    clases.push({
+                        fecha: fechaStr,
+                        hora: horariosCompletos[rowIndex],
+                        tipo: tipo,
+                        coach: coach,
+                        duracion: duracion === '60' ? '60 min' : '90 min',
+                        cuposMax: cuposMax
+                    });
+                }
+            });
         });
 
         if (clases.length === 0) {
-            return this.notify("No hay clases seleccionadas", "alert-circle");
+            return this.notify("Debes seleccionar al menos una clase", "alert-circle");
         }
 
-        // Confirmación
-        if (!confirm(`¿Guardar ${clases.length} clases para la semana del ${fechaInicio}?`)) {
+        if (!confirm(`¿Crear ${clases.length} clases para la semana del ${fechaInicio}?`)) {
             return;
         }
 
         this.showLoader();
-        
-        // Enviar todas las clases al backend
-        let exitosas = 0;
-        let fallidas = 0;
+        const result = await this.apiCall('guardarHorariosMasivo', {
+            documento: this.user.doc,
+            token: this.user.token,
+            clases: clases
+        });
 
-        for (const clase of clases) {
-            const result = await this.apiCall('agregarClase', {
-                documento: this.user.doc,
-                token: this.user.token,
-                ...clase
-            });
-
-            if (result.success) {
-                exitosas++;
-            } else {
-                fallidas++;
-            }
-            
-            // Pequeña pausa para evitar throttling
-            await new Promise(resolve => setTimeout(resolve, 300));
-        }
-
-        this.hideLoader();
-
-        if (fallidas === 0) {
-            this.notify(`✅ ${exitosas} clases guardadas exitosamente`, "check-circle");
-            // Limpiar el calendario
+        if (result.success) {
+            this.notify(`✅ ${result.clasesCreadas} clases creadas exitosamente`, "check-circle");
             this.limpiarCalendario();
         } else {
-            this.notify(`⚠️ ${exitosas} exitosas, ${fallidas} fallidas`, "alert-triangle");
+            this.notify(result.error || "Error al guardar horarios", "x-circle");
         }
+        this.hideLoader();
     },
 
     limpiarCalendario() {
-        const celdas = document.querySelectorAll('#calendarBody div[data-tipo]');
-        celdas.forEach(celda => {
-            celda.setAttribute('data-tipo', '');
-            celda.className = 'h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all';
-        });
-        this.actualizarContadorClases();
+        const duracion = document.getElementById('adminDuracionDefault').value;
+        this.generarCalendarioSemanal(duracion);
+        this.notify("Calendario limpiado", "check-circle");
     },
 
     async loadHorarios() {
@@ -545,8 +591,11 @@ const app = {
                 const fechaStr = proximoLunes.toISOString().split('T')[0];
                 document.getElementById('adminSemanaInicio').value = fechaStr;
                 
-                // Inicializar contador
-                this.actualizarContadorClases();
+                // Generar calendario con duración por defecto (90 min)
+                setTimeout(() => {
+                    const duracion = document.getElementById('adminDuracionDefault').value;
+                    this.generarCalendarioSemanal(duracion);
+                }, 100);
             }
             
             lucide.createIcons();
