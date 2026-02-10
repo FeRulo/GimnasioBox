@@ -404,24 +404,31 @@
 
                 <!-- Leyenda de Tipos -->
                 <div class="bg-white border border-gray-200 rounded-2xl p-3 shadow-sm">
-                    <div class="flex flex-wrap gap-3 items-center justify-center text-[10px] font-bold">
-                        <span class="text-gray-500">HAZ CLIC EN CADA BLOQUE:</span>
-                        <div class="flex items-center gap-1">
-                            <div class="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
-                            <span>Vacío</span>
+                    <div class="flex flex-wrap gap-3 items-center justify-between">
+                        <div class="flex flex-wrap gap-3 items-center text-[10px] font-bold">
+                            <span class="text-gray-500">HAZ CLIC EN CADA BLOQUE:</span>
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                                <span>Vacío</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded bg-red-100 border-2 border-red-500"></div>
+                                <span>Boxeo</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded bg-blue-100 border-2 border-blue-500"></div>
+                                <span>Funcional</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded bg-green-100 border-2 border-green-500"></div>
+                                <span>Fisio</span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-4 h-4 rounded bg-red-100 border-2 border-red-500"></div>
-                            <span>Boxeo</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-4 h-4 rounded bg-blue-100 border-2 border-blue-500"></div>
-                            <span>Funcional</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-4 h-4 rounded bg-green-100 border-2 border-green-500"></div>
-                            <span>Fisio</span>
-                        </div>
+                        <!-- Botón Modo Selección (solo visible en mobile) -->
+                        <button id="toggleSelectionMode" onclick="app.toggleSelectionMode()" class="md:hidden flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold transition-all border-2 border-gray-300 bg-white text-gray-700">
+                            <i data-lucide="pointer" class="w-4 h-4"></i>
+                            <span id="selectionModeText">Tap</span>
+                        </button>
                     </div>
                 </div>
 

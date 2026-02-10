@@ -5,10 +5,9 @@ const app = {
     dragInitialized: false,
     dragStartCell: null,
     dragPreviewCells: [],
-    longPressTimer: null,
-    longPressActive: false,
     touchStartX: 0,
     touchStartY: 0,
+    mobileSelectionMode: false,
 
     // ========== LOADER ==========
     showLoader() {
@@ -398,14 +397,13 @@ const app = {
             });
             
             // === EVENTOS TÁCTILES (Mobile) ===
-            // Touchstart: iniciar timer para long press
+            // Touchstart
             cell.addEventListener('touchstart', (e) => {
                 const touch = e.touches[0];
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
                 this.dragStartCell = cell;
                 this.touchStartTime = Date.now();
-                this.longPressActive = false;
                 
                 // Determinar tipo siguiente
                 const tipoActual = cell.getAttribute('data-tipo');
@@ -413,65 +411,55 @@ const app = {
                 const indexActual = tipos.indexOf(tipoActual);
                 this.dragTipo = tipos[(indexActual + 1) % tipos.length];
                 
-                // Timer para long press (400ms)
-                this.longPressTimer = setTimeout(() => {
-                    // Activar modo selección
-                    this.longPressActive = true;
-                    this.isDragging = true;
-                    
-                    // Feedback: vibración y efecto visual
-                    navigator.vibrate && navigator.vibrate([30, 50, 30]);
-                    cell.classList.add('ring-2', 'ring-purple-500');
-                    
-                    setTimeout(() => {
-                        cell.classList.remove('ring-2', 'ring-purple-500');
-                    }, 200);
-                }, 400);
+                // Si modo selección está activo, preparar para drag
+                if (this.mobileSelectionMode) {
+                    this.isDragging = false; // Esperar movimiento
+                }
             });
             
-            // Touchmove: cancelar timer o hacer selección
+            // Touchmove
             cell.addEventListener('touchmove', (e) => {
                 const touch = e.touches[0];
                 const deltaX = Math.abs(touch.clientX - this.touchStartX);
                 const deltaY = Math.abs(touch.clientY - this.touchStartY);
                 
-                // Si se mueve mucho antes del long press, cancelar timer (es scroll)
-                if (!this.longPressActive && (deltaX > 10 || deltaY > 10)) {
-                    clearTimeout(this.longPressTimer);
-                    this.dragStartCell = null;
-                    return; // Permitir scroll
-                }
-                
-                // Si long press está activo, hacer selección
-                if (this.longPressActive) {
-                    e.preventDefault(); // Bloquear scroll durante selección
+                // Solo procesar si modo selección está activo
+                if (this.mobileSelectionMode) {
+                    // Si hay movimiento mínimo, activar drag
+                    if ((deltaX > 5 || deltaY > 5) && !this.isDragging) {
+                        this.isDragging = true;
+                        navigator.vibrate && navigator.vibrate(20);
+                    }
                     
-                    const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-                    const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
-                        ? elementUnderFinger 
-                        : elementUnderFinger?.closest('.calendar-cell');
-                    
-                    if (targetCell && this.dragStartCell) {
-                        this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
+                    if (this.isDragging) {
+                        e.preventDefault(); // Bloquear scroll
+                        
+                        const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
+                            ? elementUnderFinger 
+                            : elementUnderFinger?.closest('.calendar-cell');
+                        
+                        if (targetCell && this.dragStartCell) {
+                            this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
+                        }
                     }
                 }
+                // Si modo selección no está activo, permitir scroll normal (no hacer nada)
             });
             
-            // Touchend: aplicar selección o toggle
+            // Touchend
             cell.addEventListener('touchend', (e) => {
-                clearTimeout(this.longPressTimer);
-                
                 const touchDuration = Date.now() - this.touchStartTime;
                 
-                // Si fue long press con selección
-                if (this.longPressActive && this.dragPreviewCells.length > 0) {
+                // Si modo selección activo y hubo drag con preview
+                if (this.mobileSelectionMode && this.isDragging && this.dragPreviewCells.length > 0) {
                     e.preventDefault();
                     this.aplicarSeleccionRectangular();
                     this.actualizarContadorClases();
-                    navigator.vibrate && navigator.vibrate(50);
+                    navigator.vibrate && navigator.vibrate(30);
                 }
-                // Si fue tap rápido (< 400ms), toggle simple
-                else if (!this.longPressActive && touchDuration < 400 && this.dragStartCell === cell) {
+                // Tap simple (sin modo selección o sin drag)
+                else if (this.dragStartCell === cell && touchDuration < 300) {
                     e.preventDefault();
                     this.toggleClaseTipo(cell);
                 }
@@ -481,14 +469,6 @@ const app = {
                 this.dragTipo = '';
                 this.dragStartCell = null;
                 this.dragPreviewCells = [];
-                this.longPressActive = false;
-            });
-            
-            // Touchcancel: limpiar timer
-            cell.addEventListener('touchcancel', () => {
-                clearTimeout(this.longPressTimer);
-                this.longPressActive = false;
-                this.dragStartCell = null;
             });
         });
         
@@ -697,6 +677,26 @@ const app = {
         const duracion = document.getElementById('adminDuracionDefault').value;
         this.generarCalendarioSemanal(duracion);
         this.notify("Calendario limpiado", "check-circle");
+    },
+    
+    toggleSelectionMode() {
+        this.mobileSelectionMode = !this.mobileSelectionMode;
+        const btn = document.getElementById('toggleSelectionMode');
+        const text = document.getElementById('selectionModeText');
+        
+        if (this.mobileSelectionMode) {
+            // Modo selección activado
+            btn.classList.remove('border-gray-300', 'bg-white', 'text-gray-700');
+            btn.classList.add('border-purple-500', 'bg-purple-100', 'text-purple-700');
+            text.textContent = 'Selección';
+            this.notify('Modo selección: arrastra para seleccionar área', 'hand');
+        } else {
+            // Modo normal
+            btn.classList.remove('border-purple-500', 'bg-purple-100', 'text-purple-700');
+            btn.classList.add('border-gray-300', 'bg-white', 'text-gray-700');
+            text.textContent = 'Tap';
+            this.notify('Modo normal: tap para cambiar tipo', 'check');
+        }
     },
 
     async loadHorarios() {
