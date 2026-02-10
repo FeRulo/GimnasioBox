@@ -5,8 +5,7 @@ const app = {
     dragInitialized: false,
     dragStartCell: null,
     dragPreviewCells: [],
-    touchStartX: 0,
-    touchStartY: 0,
+    multiTouchMode: false,
 
     // ========== LOADER ==========
     showLoader() {
@@ -396,56 +395,49 @@ const app = {
             });
             
             // === EVENTOS TÁCTILES (Mobile) ===
-            // Touchstart: guardar celda inicial y posición
+            // Touchstart: detectar modo (1 dedo = scroll, 2 dedos = selección)
             cell.addEventListener('touchstart', (e) => {
-                // NO prevenir aquí, permitir scroll natural
                 const touch = e.touches[0];
-                this.touchStartX = touch.clientX;
-                this.touchStartY = touch.clientY;
-                this.dragStartCell = cell;
                 
-                const tipoActual = cell.getAttribute('data-tipo');
-                const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
-                const indexActual = tipos.indexOf(tipoActual);
-                this.dragTipo = tipos[(indexActual + 1) % tipos.length];
-                
-                this.touchStartTime = Date.now();
-                this.touchMoved = false;
-                this.touchIsSelecting = false; // Nueva bandera
+                // Detectar si hay múltiples toques
+                if (e.touches.length >= 2) {
+                    // Modo selección activado con 2 dedos
+                    e.preventDefault();
+                    this.multiTouchMode = true;
+                    this.dragStartCell = cell;
+                    
+                    const tipoActual = cell.getAttribute('data-tipo');
+                    const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+                    const indexActual = tipos.indexOf(tipoActual);
+                    this.dragTipo = tipos[(indexActual + 1) % tipos.length];
+                    
+                    this.isDragging = true;
+                    
+                    // Feedback visual
+                    navigator.vibrate && navigator.vibrate(50);
+                } else {
+                    // Un solo dedo: modo normal (scroll/tap)
+                    this.multiTouchMode = false;
+                    this.dragStartCell = cell;
+                    
+                    const tipoActual = cell.getAttribute('data-tipo');
+                    const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+                    const indexActual = tipos.indexOf(tipoActual);
+                    this.dragTipo = tipos[(indexActual + 1) % tipos.length];
+                    
+                    this.touchStartTime = Date.now();
+                }
             });
             
-            // Touchmove: detectar intención (scroll vs selección)
+            // Touchmove: procesar según modo
             cell.addEventListener('touchmove', (e) => {
-                const touch = e.touches[0];
-                const deltaX = Math.abs(touch.clientX - this.touchStartX);
-                const deltaY = Math.abs(touch.clientY - this.touchStartY);
-                
-                // Si no hemos decidido la intención aún
-                if (!this.touchIsSelecting && !this.touchMoved) {
-                    // Umbral: si se mueve más de 10px
-                    if (deltaX > 10 || deltaY > 10) {
-                        this.touchMoved = true;
-                        
-                        // Decidir: si movimiento es más horizontal = selección
-                        // Si es más vertical = scroll
-                        if (deltaX > deltaY * 0.7) {
-                            // Movimiento horizontal/diagonal -> SELECCIÓN
-                            this.touchIsSelecting = true;
-                            this.isDragging = true;
-                        } else {
-                            // Movimiento vertical -> SCROLL
-                            this.touchIsSelecting = false;
-                            // Cancelar selección
-                            this.dragStartCell = null;
-                            return;
-                        }
-                    }
-                }
-                
-                // Solo procesar selección si estamos en modo selección
-                if (this.touchIsSelecting) {
-                    e.preventDefault(); // Ahora sí, bloquear scroll
+                // Si hay 2+ dedos, activar/mantener modo selección
+                if (e.touches.length >= 2) {
+                    e.preventDefault();
+                    this.multiTouchMode = true;
+                    this.isDragging = true;
                     
+                    const touch = e.touches[0];
                     const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
                     const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
                         ? elementUnderFinger 
@@ -455,31 +447,36 @@ const app = {
                         this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
                     }
                 }
+                // Si solo hay 1 dedo, permitir scroll normal
+                // (no hacer nada, dejar comportamiento por defecto)
             });
             
-            // Touchend: aplicar selección o toggle simple
+            // Touchend: aplicar selección o toggle
             cell.addEventListener('touchend', (e) => {
-                const touchDuration = Date.now() - this.touchStartTime;
-                
-                // Tap simple: rápido y sin movimiento
-                if (!this.touchMoved && touchDuration < 300) {
-                    e.preventDefault();
-                    this.toggleClaseTipo(cell);
-                }
-                // Selección rectangular: hubo drag intencional
-                else if (this.touchIsSelecting && this.dragPreviewCells.length > 0) {
+                // Si estábamos en modo multi-touch y hay preview
+                if (this.multiTouchMode && this.dragPreviewCells.length > 0) {
                     e.preventDefault();
                     this.aplicarSeleccionRectangular();
                     this.actualizarContadorClases();
+                    navigator.vibrate && navigator.vibrate(30);
+                }
+                // Si fue tap simple (un dedo, rápido)
+                else if (!this.multiTouchMode && this.dragStartCell === cell) {
+                    const touchDuration = Date.now() - this.touchStartTime;
+                    if (touchDuration < 300) {
+                        e.preventDefault();
+                        this.toggleClaseTipo(cell);
+                    }
                 }
                 
-                // Reset completo
-                this.isDragging = false;
-                this.dragTipo = '';
-                this.dragStartCell = null;
-                this.dragPreviewCells = [];
-                this.touchMoved = false;
-                this.touchIsSelecting = false;
+                // Reset solo si no quedan dedos en la pantalla
+                if (e.touches.length === 0) {
+                    this.isDragging = false;
+                    this.dragTipo = '';
+                    this.dragStartCell = null;
+                    this.dragPreviewCells = [];
+                    this.multiTouchMode = false;
+                }
             });
         });
         
