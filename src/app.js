@@ -5,7 +5,10 @@ const app = {
     dragInitialized: false,
     dragStartCell: null,
     dragPreviewCells: [],
-    multiTouchMode: false,
+    longPressTimer: null,
+    longPressActive: false,
+    touchStartX: 0,
+    touchStartY: 0,
 
     // ========== LOADER ==========
     showLoader() {
@@ -395,49 +398,54 @@ const app = {
             });
             
             // === EVENTOS TÁCTILES (Mobile) ===
-            // Touchstart: detectar modo (1 dedo = scroll, 2 dedos = selección)
+            // Touchstart: iniciar timer para long press
             cell.addEventListener('touchstart', (e) => {
                 const touch = e.touches[0];
+                this.touchStartX = touch.clientX;
+                this.touchStartY = touch.clientY;
+                this.dragStartCell = cell;
+                this.touchStartTime = Date.now();
+                this.longPressActive = false;
                 
-                // Detectar si hay múltiples toques
-                if (e.touches.length >= 2) {
-                    // Modo selección activado con 2 dedos
-                    e.preventDefault();
-                    this.multiTouchMode = true;
-                    this.dragStartCell = cell;
-                    
-                    const tipoActual = cell.getAttribute('data-tipo');
-                    const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
-                    const indexActual = tipos.indexOf(tipoActual);
-                    this.dragTipo = tipos[(indexActual + 1) % tipos.length];
-                    
+                // Determinar tipo siguiente
+                const tipoActual = cell.getAttribute('data-tipo');
+                const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+                const indexActual = tipos.indexOf(tipoActual);
+                this.dragTipo = tipos[(indexActual + 1) % tipos.length];
+                
+                // Timer para long press (400ms)
+                this.longPressTimer = setTimeout(() => {
+                    // Activar modo selección
+                    this.longPressActive = true;
                     this.isDragging = true;
                     
-                    // Feedback visual
-                    navigator.vibrate && navigator.vibrate(50);
-                } else {
-                    // Un solo dedo: modo normal (scroll/tap)
-                    this.multiTouchMode = false;
-                    this.dragStartCell = cell;
+                    // Feedback: vibración y efecto visual
+                    navigator.vibrate && navigator.vibrate([30, 50, 30]);
+                    cell.classList.add('ring-2', 'ring-purple-500');
                     
-                    const tipoActual = cell.getAttribute('data-tipo');
-                    const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
-                    const indexActual = tipos.indexOf(tipoActual);
-                    this.dragTipo = tipos[(indexActual + 1) % tipos.length];
-                    
-                    this.touchStartTime = Date.now();
-                }
+                    setTimeout(() => {
+                        cell.classList.remove('ring-2', 'ring-purple-500');
+                    }, 200);
+                }, 400);
             });
             
-            // Touchmove: procesar según modo
+            // Touchmove: cancelar timer o hacer selección
             cell.addEventListener('touchmove', (e) => {
-                // Si hay 2+ dedos, activar/mantener modo selección
-                if (e.touches.length >= 2) {
-                    e.preventDefault();
-                    this.multiTouchMode = true;
-                    this.isDragging = true;
+                const touch = e.touches[0];
+                const deltaX = Math.abs(touch.clientX - this.touchStartX);
+                const deltaY = Math.abs(touch.clientY - this.touchStartY);
+                
+                // Si se mueve mucho antes del long press, cancelar timer (es scroll)
+                if (!this.longPressActive && (deltaX > 10 || deltaY > 10)) {
+                    clearTimeout(this.longPressTimer);
+                    this.dragStartCell = null;
+                    return; // Permitir scroll
+                }
+                
+                // Si long press está activo, hacer selección
+                if (this.longPressActive) {
+                    e.preventDefault(); // Bloquear scroll durante selección
                     
-                    const touch = e.touches[0];
                     const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
                     const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
                         ? elementUnderFinger 
@@ -447,36 +455,40 @@ const app = {
                         this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
                     }
                 }
-                // Si solo hay 1 dedo, permitir scroll normal
-                // (no hacer nada, dejar comportamiento por defecto)
             });
             
             // Touchend: aplicar selección o toggle
             cell.addEventListener('touchend', (e) => {
-                // Si estábamos en modo multi-touch y hay preview
-                if (this.multiTouchMode && this.dragPreviewCells.length > 0) {
+                clearTimeout(this.longPressTimer);
+                
+                const touchDuration = Date.now() - this.touchStartTime;
+                
+                // Si fue long press con selección
+                if (this.longPressActive && this.dragPreviewCells.length > 0) {
                     e.preventDefault();
                     this.aplicarSeleccionRectangular();
                     this.actualizarContadorClases();
-                    navigator.vibrate && navigator.vibrate(30);
+                    navigator.vibrate && navigator.vibrate(50);
                 }
-                // Si fue tap simple (un dedo, rápido)
-                else if (!this.multiTouchMode && this.dragStartCell === cell) {
-                    const touchDuration = Date.now() - this.touchStartTime;
-                    if (touchDuration < 300) {
-                        e.preventDefault();
-                        this.toggleClaseTipo(cell);
-                    }
+                // Si fue tap rápido (< 400ms), toggle simple
+                else if (!this.longPressActive && touchDuration < 400 && this.dragStartCell === cell) {
+                    e.preventDefault();
+                    this.toggleClaseTipo(cell);
                 }
                 
-                // Reset solo si no quedan dedos en la pantalla
-                if (e.touches.length === 0) {
-                    this.isDragging = false;
-                    this.dragTipo = '';
-                    this.dragStartCell = null;
-                    this.dragPreviewCells = [];
-                    this.multiTouchMode = false;
-                }
+                // Reset completo
+                this.isDragging = false;
+                this.dragTipo = '';
+                this.dragStartCell = null;
+                this.dragPreviewCells = [];
+                this.longPressActive = false;
+            });
+            
+            // Touchcancel: limpiar timer
+            cell.addEventListener('touchcancel', () => {
+                clearTimeout(this.longPressTimer);
+                this.longPressActive = false;
+                this.dragStartCell = null;
             });
         });
         
