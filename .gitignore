@@ -9,13 +9,9 @@ env/
 __pycache__/
 *.pyc
 
-# Apps Script
-gas/.clasp.json
-gas/appsscript.json
-gas/Code.gs
-
-# Configuración sensible (solo backend)
-gas/config.private.gs
+# Apps Script - Ignorar todo excepto archivos example
+gas/*
+!gas/*.example.*
 
 # Archivos de sistema
 .DS_Store

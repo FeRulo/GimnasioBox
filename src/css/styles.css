@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+
+.view { 
+    animation: fadeIn 0.4s ease-out; 
+}
+
+.view:not(.active) { 
+    display: none !important; 
+}
+
+@keyframes fadeIn { 
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    } 
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    } 
+}
+
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+
+/* Responsive: Desktop muestra en el centro con ancho máximo */
+@media (min-width: 768px) {
+    #app {
+        max-width: 900px !important;
+        margin: 20px auto;
+        border-radius: 24px;
+        overflow: hidden;
+    }
+    
+    .main-content {
+        padding: 40px !important;
+    }
+    
+    .view-login {
+        min-height: 600px;
+    }
+}
+
+@media (min-width: 1024px) {
+    #app {
+        max-width: 1200px !important;
+    }
+}

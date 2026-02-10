@@ -90,6 +90,325 @@ const app = {
         btn.disabled = false;
     },
 
+    // ========== LOGIN ADMINISTRADOR ==========
+    async loginAdmin() {
+        const doc = document.getElementById('adminDocInput').value;
+        const password = document.getElementById('adminPasswordInput').value;
+        
+        if(!doc) return this.notify("Ingresa tu documento", "alert-circle");
+        if(!password) return this.notify("Ingresa tu contraseña", "alert-circle");
+
+        const btn = document.getElementById('loginAdminBtn');
+        btn.innerText = "Verificando credenciales...";
+        btn.classList.add('opacity-50');
+        btn.disabled = true;
+        this.showLoader();
+
+        const result = await this.apiCall('loginAdmin', { documento: doc, password: password });
+        
+        if (result.success) {
+            const admin = result.data;
+            this.user = {
+                doc: admin.documento,
+                name: admin.nombre,
+                email: admin.email,
+                rol: admin.rol,
+                esAdmin: true,
+                token: admin.token,
+                tokenExpira: Date.now() + admin.expiraEn,
+                // Valores por defecto para admin
+                tieneMembresia: true,
+                vencimientoMembresia: '',
+                planActivo: 'Administrador',
+                creditsWeekly: '∞',
+                creditsUsed: 0,
+                creditsAvailable: '∞',
+                estado: 'Activo',
+                puedeReservar: true
+            };
+            
+            // Guardar token en localStorage
+            localStorage.setItem('adminToken', admin.token);
+            localStorage.setItem('adminDoc', admin.documento);
+            localStorage.setItem('tokenExpira', this.user.tokenExpira);
+            
+            // Actualizar UI
+            this.syncUIBasic();
+            this.changeView('main');
+            
+            // Mostrar botón de admin
+            document.getElementById('adminPanelBtn').classList.remove('hidden');
+            
+            this.notify(`¡Bienvenido, ${admin.nombre.split(' ')[0]}!`, "shield-check");
+        } else {
+            this.notify(result.error || "Credenciales inválidas", "x-circle");
+        }
+        
+        this.hideLoader();
+        btn.innerText = "🔐 Acceder como Admin";
+        btn.classList.remove('opacity-50');
+        btn.disabled = false;
+    },
+
+    // Verificar si hay sesión de admin activa al cargar
+    checkAdminSession() {
+        const token = localStorage.getItem('adminToken');
+        const doc = localStorage.getItem('adminDoc');
+        const expira = parseInt(localStorage.getItem('tokenExpira'));
+        
+        if (token && doc && expira > Date.now()) {
+            // Token válido, restaurar sesión
+            return { token, doc };
+        } else {
+            // Token expirado o no existe
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminDoc');
+            localStorage.removeItem('tokenExpira');
+            return null;
+        }
+    },
+
+    // ========== FUNCIONES DE ADMINISTRACIÓN ==========
+    async agregarClase() {
+        if (!this.user || !this.user.esAdmin) {
+            return this.notify("No tienes permisos de administrador", "x-circle");
+        }
+
+        const fecha = document.getElementById('adminFecha').value;
+        const hora = document.getElementById('adminHora').value;
+        const tipo = document.getElementById('adminTipo').value;
+        const coach = document.getElementById('adminCoach').value;
+        const duracion = document.getElementById('adminDuracion').value;
+        const cuposMax = document.getElementById('adminCupos').value;
+
+        if (!fecha || !hora || !tipo || !coach || !duracion || !cuposMax) {
+            return this.notify("Completa todos los campos", "alert-circle");
+        }
+
+        this.showLoader();
+        const result = await this.apiCall('agregarClase', {
+            documento: this.user.doc,
+            token: this.user.token,
+            fecha: fecha,
+            hora: hora,
+            tipo: tipo,
+            coach: coach,
+            duracion: duracion,
+            cuposMax: parseInt(cuposMax)
+        });
+
+        if (result.success) {
+            this.notify("Clase agregada exitosamente", "check-circle");
+            // Limpiar formulario
+            document.getElementById('adminFecha').value = '';
+            document.getElementById('adminHora').value = '';
+            document.getElementById('adminCupos').value = '8';
+            // Recargar lista de clases
+            this.cargarClasesAdmin();
+        } else {
+            this.notify(result.error || "Error al agregar clase", "x-circle");
+        }
+        this.hideLoader();
+    },
+
+    async eliminarClase(idClase) {
+        if (!this.user || !this.user.esAdmin) {
+            return this.notify("No tienes permisos de administrador", "x-circle");
+        }
+
+        if (!confirm('¿Seguro que deseas eliminar esta clase?')) {
+            return;
+        }
+
+        this.showLoader();
+        const result = await this.apiCall('eliminarClase', {
+            documento: this.user.doc,
+            token: this.user.token,
+            idClase: idClase
+        });
+
+        if (result.success) {
+            this.notify("Clase eliminada exitosamente", "check-circle");
+            this.cargarClasesAdmin();
+        } else {
+            this.notify(result.error || "Error al eliminar clase", "x-circle");
+        }
+        this.hideLoader();
+    },
+
+    async cargarClasesAdmin() {
+        if (!this.user || !this.user.esAdmin) return;
+
+        const result = await this.apiCall('getHorarios', { 
+            documento: this.user.doc,
+            fecha: new Date().toISOString().split('T')[0]
+        });
+
+        if (result.success) {
+            const container = document.getElementById('adminClasesList');
+            if (result.horarios.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No hay clases próximas</p>';
+                return;
+            }
+
+            container.innerHTML = result.horarios.map(h => `
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                    <div class="flex-grow">
+                        <p class="text-sm font-bold text-navy-900">${h.tipo} - ${h.coach}</p>
+                        <p class="text-xs text-gray-500">${h.fecha} a las ${h.hora}</p>
+                        <p class="text-xs text-gray-400">Cupos: ${h.cuposLibres}/${h.cuposMax}</p>
+                    </div>
+                    <button onclick="app.eliminarClase('${h.id}')" class="p-2 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+    },
+
+    // ========== CALENDARIO SEMANAL DE ADMINISTRACIÓN ==========
+    toggleClaseTipo(element, diaIndex, hora) {
+        const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+        const estilos = [
+            { border: 'border-gray-300', bg: 'bg-gray-50' }, // Vacío
+            { border: 'border-red-500', bg: 'bg-red-100' },  // Boxeo
+            { border: 'border-blue-500', bg: 'bg-blue-100' }, // Funcional
+            { border: 'border-green-500', bg: 'bg-green-100' } // Fisio
+        ];
+
+        // Obtener tipo actual
+        const tipoActual = element.getAttribute('data-tipo');
+        const indexActual = tipos.indexOf(tipoActual);
+        
+        // Ciclar al siguiente tipo
+        const nuevoIndex = (indexActual + 1) % tipos.length;
+        const nuevoTipo = tipos[nuevoIndex];
+        
+        // Actualizar atributo
+        element.setAttribute('data-tipo', nuevoTipo);
+        
+        // Limpiar estilos anteriores
+        estilos.forEach(estilo => {
+            element.classList.remove(estilo.border, estilo.bg);
+        });
+        
+        // Aplicar nuevos estilos
+        element.classList.add(estilos[nuevoIndex].border, estilos[nuevoIndex].bg);
+        
+        // Actualizar contador
+        this.actualizarContadorClases();
+    },
+
+    actualizarContadorClases() {
+        const celdas = document.querySelectorAll('#calendarBody div[data-tipo]');
+        const total = Array.from(celdas).filter(c => c.getAttribute('data-tipo') !== '').length;
+        document.getElementById('clasesCounter').textContent = total;
+    },
+
+    async guardarHorariosSemanal() {
+        if (!this.user || !this.user.esAdmin) {
+            return this.notify("No tienes permisos de administrador", "x-circle");
+        }
+
+        const fechaInicio = document.getElementById('adminSemanaInicio').value;
+        const coach = document.getElementById('adminCoachDefault').value;
+        const cuposMax = parseInt(document.getElementById('adminCuposDefault').value);
+
+        if (!fechaInicio) {
+            return this.notify("Selecciona la fecha de inicio (lunes)", "alert-circle");
+        }
+
+        // Validar que sea un lunes
+        const fecha = new Date(fechaInicio + 'T00:00:00');
+        if (fecha.getDay() !== 1) {
+            return this.notify("La fecha debe ser un lunes", "alert-circle");
+        }
+
+        if (!coach || !cuposMax) {
+            return this.notify("Completa el coach y los cupos", "alert-circle");
+        }
+
+        // Recopilar todas las celdas con clases seleccionadas
+        const celdas = document.querySelectorAll('#calendarBody div[data-tipo]');
+        const clases = [];
+
+        celdas.forEach((celda, index) => {
+            const tipo = celda.getAttribute('data-tipo');
+            if (tipo && tipo !== '') {
+                // Obtener la fila (hora) y columna (día)
+                const fila = celda.closest('tr');
+                const hora = fila.querySelector('td:first-child').textContent.trim();
+                const diaIndex = Array.from(celda.closest('tr').querySelectorAll('td > div')).indexOf(celda);
+                
+                // Calcular fecha
+                const fechaClase = new Date(fecha);
+                fechaClase.setDate(fechaClase.getDate() + diaIndex);
+                const fechaStr = fechaClase.toISOString().split('T')[0];
+                
+                clases.push({
+                    fecha: fechaStr,
+                    hora: hora,
+                    tipo: tipo,
+                    coach: coach,
+                    duracion: '90 min',
+                    cuposMax: cuposMax
+                });
+            }
+        });
+
+        if (clases.length === 0) {
+            return this.notify("No hay clases seleccionadas", "alert-circle");
+        }
+
+        // Confirmación
+        if (!confirm(`¿Guardar ${clases.length} clases para la semana del ${fechaInicio}?`)) {
+            return;
+        }
+
+        this.showLoader();
+        
+        // Enviar todas las clases al backend
+        let exitosas = 0;
+        let fallidas = 0;
+
+        for (const clase of clases) {
+            const result = await this.apiCall('agregarClase', {
+                documento: this.user.doc,
+                token: this.user.token,
+                ...clase
+            });
+
+            if (result.success) {
+                exitosas++;
+            } else {
+                fallidas++;
+            }
+            
+            // Pequeña pausa para evitar throttling
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        this.hideLoader();
+
+        if (fallidas === 0) {
+            this.notify(`✅ ${exitosas} clases guardadas exitosamente`, "check-circle");
+            // Limpiar el calendario
+            this.limpiarCalendario();
+        } else {
+            this.notify(`⚠️ ${exitosas} exitosas, ${fallidas} fallidas`, "alert-triangle");
+        }
+    },
+
+    limpiarCalendario() {
+        const celdas = document.querySelectorAll('#calendarBody div[data-tipo]');
+        celdas.forEach(celda => {
+            celda.setAttribute('data-tipo', '');
+            celda.className = 'h-12 rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all';
+        });
+        this.actualizarContadorClases();
+    },
+
     async loadHorarios() {
         if (this.sessions.length > 0) return; // Ya están cargados
         
@@ -134,6 +453,15 @@ const app = {
             this.sessions = [];
             this.userReservations = [];
             document.getElementById('docInput').value = '';
+            
+            // Limpiar tokens de admin
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminDoc');
+            localStorage.removeItem('tokenExpira');
+            
+            // Ocultar botón de admin
+            document.getElementById('adminPanelBtn').classList.add('hidden');
+            
             this.changeView('login');
             this.notify('Sesión cerrada correctamente', 'log-out');
         }
@@ -147,18 +475,32 @@ const app = {
 
     syncUIBasic() {
         // Solo actualiza la UI básica sin cargar datos de la API
-        document.getElementById('creditsCount').innerText = this.user.creditsUsed;
-        document.getElementById('creditsLimit').innerText = this.user.creditsWeekly;
+        if (this.user.esAdmin) {
+            document.getElementById('creditsCount').innerHTML = '<span class="text-purple-600">∞</span>';
+            document.getElementById('creditsLimit').innerHTML = '<span class="text-purple-400">∞</span>';
+        } else {
+            document.getElementById('creditsCount').innerText = this.user.creditsUsed;
+            document.getElementById('creditsLimit').innerText = this.user.creditsWeekly;
+        }
         
         // Badge de membresía + plan
         let badgeText = '';
-        if (this.user.tieneMembresia) {
+        if (this.user.esAdmin) {
+            badgeText = '👑 ADMINISTRADOR';
+        } else if (this.user.tieneMembresia) {
             badgeText = `Membresía Activa | ${this.user.planActivo}`;
         } else {
             badgeText = 'Sin Membresía';
         }
         document.getElementById('badgeMembresia').innerText = badgeText;
         document.getElementById('userTag').innerText = "ID: " + this.user.doc;
+        
+        // Mostrar/ocultar botón de admin
+        if (this.user.esAdmin) {
+            document.getElementById('adminPanelBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('adminPanelBtn').classList.add('hidden');
+        }
     },
 
     syncUI() {
@@ -174,11 +516,9 @@ const app = {
             // Ocultar todas las vistas
             document.querySelectorAll('.view').forEach(v => {
                 v.classList.remove('active');
-                v.style.display = 'none';
             });
             // Mostrar solo la vista activa
             target.classList.add('active');
-            target.style.display = 'block';
             
             // Si es la vista de registro, mostrar modal obligatorio
             if (viewId === 'register') {
@@ -194,6 +534,19 @@ const app = {
                 this.loadReservas();
             } else if (viewId === 'payments') {
                 this.setupPaymentOptions();
+            } else if (viewId === 'admin-panel') {
+                // Inicializar fecha al próximo lunes
+                const hoy = new Date();
+                const diaSemana = hoy.getDay();
+                const diasHastaLunes = diaSemana === 0 ? 1 : (diaSemana === 1 ? 0 : 8 - diaSemana);
+                const proximoLunes = new Date(hoy);
+                proximoLunes.setDate(hoy.getDate() + diasHastaLunes);
+                
+                const fechaStr = proximoLunes.toISOString().split('T')[0];
+                document.getElementById('adminSemanaInicio').value = fechaStr;
+                
+                // Inicializar contador
+                this.actualizarContadorClases();
             }
             
             lucide.createIcons();
@@ -831,6 +1184,14 @@ const app = {
 // Calcular edad al cambiar fecha de nacimiento (solo para mostrar al usuario)
 window.onload = () => {
     lucide.createIcons();
+    
+    // Verificar si hay sesión de admin activa
+    const adminSession = app.checkAdminSession();
+    if (adminSession) {
+        // Hay una sesión de admin guardada, intentar restaurarla automáticamente
+        console.log('Sesión de admin detectada');
+        // Nota: Aquí podrías auto-login, pero por seguridad es mejor pedir las credenciales de nuevo
+    }
     
     // Event listener para el input de texto (formato dd/mm/yyyy)
     const fechaNacInput = document.getElementById('regFechaNac');

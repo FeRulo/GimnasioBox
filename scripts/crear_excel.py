@@ -8,6 +8,17 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.styles.numbers import FORMAT_DATE_XLSX14
 from datetime import datetime, timedelta
+import hashlib
+import os
+
+# SALT debe coincidir con config.private.gs
+SALT = "gimnasio_box_salt_2026_produccion_secret"
+
+def generar_hash_password(password):
+    """Genera hash SHA-256 de una contraseña + SALT"""
+    data = password + SALT
+    hash_obj = hashlib.sha256(data.encode('utf-8'))
+    return hash_obj.hexdigest()
 
 def crear_excel_gimnasio():
     # Crear nuevo workbook
@@ -22,6 +33,9 @@ def crear_excel_gimnasio():
             'Documento', 'Nombre', 'Email', 'Fecha_Nacimiento', 'Edad',
             'Contacto', 'EPS', 'Contacto_Emergencia', 'Tel_Emergencia',
             'Antecedentes', 'Objetivos', 'Objetivo_Otro', 'Estado'
+        ],
+        'Administradores': [
+            'Documento', 'Nombre', 'Email', 'Rol', 'Password_Hash'
         ],
         'Pagos': [
             'ID_Pago', 'Fecha_Pago', 'Documento', 'Tipo_Pago',
@@ -83,7 +97,14 @@ def crear_excel_gimnasio():
             ws.column_dimensions[column].width = adjusted_width
     
     # Guardar el archivo
-    nombre_archivo = '../generated/gimnasio_box.xlsx'
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.dirname(script_dir)
+    generated_dir = os.path.join(project_dir, 'generated')
+    
+    # Crear directorio generated si no existe
+    os.makedirs(generated_dir, exist_ok=True)
+    
+    nombre_archivo = os.path.join(generated_dir, 'gimnasio_box.xlsx')
     wb.save(nombre_archivo)
     print(f"✅ Archivo '{nombre_archivo}' creado exitosamente!")
     print(f"📋 Hojas creadas: {', '.join(hojas.keys())}")
@@ -121,6 +142,31 @@ def poblar_datos_dummy(wb):
                 # Columna D (Fecha_Nacimiento): aplicar formato de fecha
                 if col == 4 and valor:
                     cell.number_format = 'YYYY-MM-DD'
+    
+    # ========== ADMINISTRADORES ==========
+    ws_admin = wb['Administradores']
+    
+    # NOTA IMPORTANTE: Los hashes de contraseñas se generan usando SHA-256 + SALT
+    # Para agregar nuevos administradores, usa el script: scripts/generar_hash_password.py
+    
+    # Generar hashes para contraseñas de ejemplo
+    admin_hash = generar_hash_password("admin123")  # Contraseña: admin123
+    coach_hash = generar_hash_password("coach456")  # Contraseña: coach456
+    
+    admins_dummy = [
+        # Documento, Nombre, Email, Rol, Password_Hash
+        ['99999999', 'Admin Principal', 'admin@gimnasiobox.com', 'Super Admin', admin_hash],
+        ['88888888', 'Hailer Joya', 'hailer@gimnasiobox.com', 'Coach', coach_hash],
+    ]
+    
+    print(f"\n🔐 Credenciales de Administradores (GUARDAR EN LUGAR SEGURO):")
+    print(f"   Usuario: 99999999 | Password: admin123 | Rol: Super Admin")
+    print(f"   Usuario: 88888888 | Password: coach456 | Rol: Coach")
+    print()
+    
+    for fila, datos in enumerate(admins_dummy, start=2):
+        for col, valor in enumerate(datos, start=1):
+            ws_admin.cell(row=fila, column=col, value=valor)
     
     # ========== HORARIOS ==========
     ws_horarios = wb['Horarios']
