@@ -2,6 +2,9 @@ const app = {
     user: null,
     sessions: [],
     userReservations: [],
+    dragInitialized: false,
+    dragStartCell: null,
+    dragPreviewCells: [],
 
     // ========== LOADER ==========
     showLoader() {
@@ -268,11 +271,45 @@ const app = {
     },
 
     // ========== CALENDARIO SEMANAL DE ADMINISTRACIÓN ==========
+    inicializarDragSelection() {
+        this.isDragging = false;
+        this.dragTipo = '';
+        
+        const calendarBody = document.getElementById('calendarBody');
+        if (!calendarBody) return;
+        
+        // Solo inicializar una vez (evitar listeners duplicados)
+        if (this.dragInitialized) return;
+        this.dragInitialized = true;
+        
+        // Deshabilitar selección de texto durante el drag
+        calendarBody.addEventListener('selectstart', (e) => {
+            if (this.isDragging) e.preventDefault();
+        });
+        
+        // Global mouseup para asegurar que siempre se detenga el drag
+        document.addEventListener('mouseup', () => {
+            if (this.isDragging && this.dragPreviewCells.length > 0) {
+                // Aplicar el tipo definitivo a las celdas seleccionadas
+                this.aplicarSeleccionRectangular();
+                this.actualizarContadorClases();
+            }
+            
+            // Reset completo
+            this.isDragging = false;
+            this.dragTipo = '';
+            this.dragStartCell = null;
+            this.dragPreviewCells = [];
+            document.body.style.cursor = 'default';
+        });
+    },
+
     actualizarTamañoBloques() {
         const duracion = document.getElementById('adminDuracionDefault').value;
         
         // Regenerar el calendario con los horarios apropiados
         this.generarCalendarioSemanal(duracion);
+        this.inicializarDragSelection();
         
         this.notify(`Bloques ajustados a ${duracion === '60' ? '1 hora' : '1.5 horas'}`, 'settings');
     },
@@ -307,38 +344,137 @@ const app = {
             html += `
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="p-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 bg-white">${hora}</td>
-                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 0, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 1, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 2, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 3, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                    <td class="p-1 border-r border-gray-100"><div onclick="app.toggleClaseTipo(this, 4, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
-                    <td class="p-1"><div onclick="app.toggleClaseTipo(this, 5, '${horariosCompletos[index]}')" class="${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo=""></div></td>
+                    <td class="p-1 border-r border-gray-100"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="0" data-hora="${horariosCompletos[index]}"></div></td>
+                    <td class="p-1 border-r border-gray-100"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="1" data-hora="${horariosCompletos[index]}"></div></td>
+                    <td class="p-1 border-r border-gray-100"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="2" data-hora="${horariosCompletos[index]}"></div></td>
+                    <td class="p-1 border-r border-gray-100"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="3" data-hora="${horariosCompletos[index]}"></div></td>
+                    <td class="p-1 border-r border-gray-100"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="4" data-hora="${horariosCompletos[index]}"></div></td>
+                    <td class="p-1"><div class="calendar-cell ${alturaBloque} rounded cursor-pointer border-2 border-gray-300 bg-gray-50 hover:border-purple-400 transition-all" data-tipo="" data-dia="5" data-hora="${horariosCompletos[index]}"></div></td>
                 </tr>`;
         });
         
         container.innerHTML = html;
+        
+        // Agregar event listeners para drag selection
+        const cells = document.querySelectorAll('.calendar-cell');
+        cells.forEach(cell => {
+            // Click simple: ciclar tipo
+            cell.addEventListener('click', (e) => {
+                if (!this.isDragging) {
+                    this.toggleClaseTipo(cell);
+                }
+            });
+            
+            // Mousedown: preparar para posible drag
+            cell.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.dragStartCell = cell;
+                
+                // Determinar siguiente tipo para aplicar durante el drag
+                const tipoActual = cell.getAttribute('data-tipo');
+                const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+                const indexActual = tipos.indexOf(tipoActual);
+                this.dragTipo = tipos[(indexActual + 1) % tipos.length];
+                
+                // NO activar isDragging aún, esperar movimiento
+            });
+            
+            // Mouseenter: activar drag solo si hay movimiento
+            cell.addEventListener('mouseenter', (e) => {
+                if (this.dragStartCell && !this.isDragging) {
+                    // Primera vez que se mueve, activar drag
+                    this.isDragging = true;
+                    document.body.style.cursor = 'crosshair';
+                }
+                
+                if (this.isDragging && this.dragStartCell) {
+                    this.mostrarPreviewSeleccion(this.dragStartCell, cell);
+                }
+            });
+        });
+        
         this.actualizarContadorClases();
     },
 
     toggleClaseTipo(element, diaIndex, hora) {
+        const tipoActual = element.getAttribute('data-tipo');
         const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+        const indexActual = tipos.indexOf(tipoActual);
+        const nuevoTipo = tipos[(indexActual + 1) % tipos.length];
+        
+        this.aplicarTipo(element, nuevoTipo);
+        this.actualizarContadorClases();
+    },
+    
+    mostrarPreviewSeleccion(startCell, endCell) {
+        // Limpiar preview anterior
+        this.dragPreviewCells.forEach(cell => {
+            cell.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-1');
+        });
+        this.dragPreviewCells = [];
+        
+        // Calcular área rectangular
+        const startDia = parseInt(startCell.getAttribute('data-dia'));
+        const endDia = parseInt(endCell.getAttribute('data-dia'));
+        const startHora = startCell.getAttribute('data-hora');
+        const endHora = endCell.getAttribute('data-hora');
+        
+        const minDia = Math.min(startDia, endDia);
+        const maxDia = Math.max(startDia, endDia);
+        
+        // Obtener todas las celdas del calendario
+        const allCells = document.querySelectorAll('.calendar-cell');
+        const horasOrdenadas = [];
+        
+        // Construir lista de horas en orden
+        allCells.forEach(cell => {
+            const hora = cell.getAttribute('data-hora');
+            if (hora && !horasOrdenadas.includes(hora)) {
+                horasOrdenadas.push(hora);
+            }
+        });
+        
+        const startHoraIndex = horasOrdenadas.indexOf(startHora);
+        const endHoraIndex = horasOrdenadas.indexOf(endHora);
+        const minHoraIndex = Math.min(startHoraIndex, endHoraIndex);
+        const maxHoraIndex = Math.max(startHoraIndex, endHoraIndex);
+        
+        // Seleccionar todas las celdas dentro del rectángulo
+        allCells.forEach(cell => {
+            const dia = parseInt(cell.getAttribute('data-dia'));
+            const hora = cell.getAttribute('data-hora');
+            const horaIndex = horasOrdenadas.indexOf(hora);
+            
+            if (dia >= minDia && dia <= maxDia && horaIndex >= minHoraIndex && horaIndex <= maxHoraIndex) {
+                cell.classList.add('ring-2', 'ring-purple-500', 'ring-offset-1');
+                this.dragPreviewCells.push(cell);
+            }
+        });
+    },
+    
+    aplicarSeleccionRectangular() {
+        // Aplicar el tipo a todas las celdas del preview
+        this.dragPreviewCells.forEach(cell => {
+            // Remover ring de preview
+            cell.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-1');
+            // Aplicar tipo definitivo
+            this.aplicarTipo(cell, this.dragTipo);
+        });
+    },
+    
+    aplicarTipo(element, tipo) {
         const estilos = [
             { border: 'border-gray-300', bg: 'bg-gray-50' }, // Vacío
             { border: 'border-red-500', bg: 'bg-red-100' },  // Boxeo
             { border: 'border-blue-500', bg: 'bg-blue-100' }, // Funcional
             { border: 'border-green-500', bg: 'bg-green-100' } // Fisio
         ];
-
-        // Obtener tipo actual
-        const tipoActual = element.getAttribute('data-tipo');
-        const indexActual = tipos.indexOf(tipoActual);
         
-        // Ciclar al siguiente tipo
-        const nuevoIndex = (indexActual + 1) % tipos.length;
-        const nuevoTipo = tipos[nuevoIndex];
+        const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+        const index = tipos.indexOf(tipo);
         
         // Actualizar atributo
-        element.setAttribute('data-tipo', nuevoTipo);
+        element.setAttribute('data-tipo', tipo);
         
         // Preservar altura actual (h-8 o h-12)
         const tieneH8 = element.classList.contains('h-8');
@@ -350,7 +486,7 @@ const app = {
         });
         
         // Aplicar nuevos estilos
-        element.classList.add('border-2', estilos[nuevoIndex].border, estilos[nuevoIndex].bg);
+        element.classList.add('border-2', estilos[index].border, estilos[index].bg);
         
         // Restaurar altura si fue removida
         if (tieneH8 && !element.classList.contains('h-8')) {
@@ -359,8 +495,17 @@ const app = {
             element.classList.add('h-12');
         }
         
-        // Actualizar contador
-        this.actualizarContadorClases();
+        // Actualizar contenido visual
+        if (tipo === '') {
+            element.innerHTML = '';
+        } else {
+            const colores = {
+                'Boxeo': 'text-red-700',
+                'Funcional': 'text-blue-700',
+                'Fisio': 'text-green-700'
+            };
+            element.innerHTML = `<span class="text-[10px] font-bold ${colores[tipo]}">${tipo}</span>`;
+        }
     },
 
     actualizarContadorClases() {
@@ -595,6 +740,7 @@ const app = {
                 setTimeout(() => {
                     const duracion = document.getElementById('adminDuracionDefault').value;
                     this.generarCalendarioSemanal(duracion);
+                    this.inicializarDragSelection();
                 }, 100);
             }
             
