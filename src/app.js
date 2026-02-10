@@ -5,6 +5,8 @@ const app = {
     dragInitialized: false,
     dragStartCell: null,
     dragPreviewCells: [],
+    touchStartX: 0,
+    touchStartY: 0,
 
     // ========== LOADER ==========
     showLoader() {
@@ -394,9 +396,12 @@ const app = {
             });
             
             // === EVENTOS TÁCTILES (Mobile) ===
-            // Touchstart: guardar celda inicial y tipo
+            // Touchstart: guardar celda inicial y posición
             cell.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+                // NO prevenir aquí, permitir scroll natural
+                const touch = e.touches[0];
+                this.touchStartX = touch.clientX;
+                this.touchStartY = touch.clientY;
                 this.dragStartCell = cell;
                 
                 const tipoActual = cell.getAttribute('data-tipo');
@@ -404,55 +409,77 @@ const app = {
                 const indexActual = tipos.indexOf(tipoActual);
                 this.dragTipo = tipos[(indexActual + 1) % tipos.length];
                 
-                // Detectar si es tap simple o drag
                 this.touchStartTime = Date.now();
                 this.touchMoved = false;
+                this.touchIsSelecting = false; // Nueva bandera
             });
             
-            // Touchmove: detectar celda bajo el dedo
+            // Touchmove: detectar intención (scroll vs selección)
             cell.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                this.touchMoved = true;
+                const touch = e.touches[0];
+                const deltaX = Math.abs(touch.clientX - this.touchStartX);
+                const deltaY = Math.abs(touch.clientY - this.touchStartY);
                 
-                if (!this.isDragging) {
-                    this.isDragging = true;
+                // Si no hemos decidido la intención aún
+                if (!this.touchIsSelecting && !this.touchMoved) {
+                    // Umbral: si se mueve más de 10px
+                    if (deltaX > 10 || deltaY > 10) {
+                        this.touchMoved = true;
+                        
+                        // Decidir: si movimiento es más horizontal = selección
+                        // Si es más vertical = scroll
+                        if (deltaX > deltaY * 0.7) {
+                            // Movimiento horizontal/diagonal -> SELECCIÓN
+                            this.touchIsSelecting = true;
+                            this.isDragging = true;
+                        } else {
+                            // Movimiento vertical -> SCROLL
+                            this.touchIsSelecting = false;
+                            // Cancelar selección
+                            this.dragStartCell = null;
+                            return;
+                        }
+                    }
                 }
                 
-                // Obtener coordenadas del touch
-                const touch = e.touches[0];
-                const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-                
-                // Verificar si es una celda del calendario
-                const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
-                    ? elementUnderFinger 
-                    : elementUnderFinger?.closest('.calendar-cell');
-                
-                if (targetCell && this.dragStartCell) {
-                    this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
+                // Solo procesar selección si estamos en modo selección
+                if (this.touchIsSelecting) {
+                    e.preventDefault(); // Ahora sí, bloquear scroll
+                    
+                    const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
+                        ? elementUnderFinger 
+                        : elementUnderFinger?.closest('.calendar-cell');
+                    
+                    if (targetCell && this.dragStartCell) {
+                        this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
+                    }
                 }
             });
             
             // Touchend: aplicar selección o toggle simple
             cell.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                
                 const touchDuration = Date.now() - this.touchStartTime;
                 
-                // Si fue un tap rápido sin movimiento (< 200ms), hacer toggle simple
-                if (!this.touchMoved && touchDuration < 200) {
+                // Tap simple: rápido y sin movimiento
+                if (!this.touchMoved && touchDuration < 300) {
+                    e.preventDefault();
                     this.toggleClaseTipo(cell);
-                } else if (this.isDragging && this.dragPreviewCells.length > 0) {
-                    // Si hubo drag, aplicar selección rectangular
+                }
+                // Selección rectangular: hubo drag intencional
+                else if (this.touchIsSelecting && this.dragPreviewCells.length > 0) {
+                    e.preventDefault();
                     this.aplicarSeleccionRectangular();
                     this.actualizarContadorClases();
                 }
                 
-                // Reset
+                // Reset completo
                 this.isDragging = false;
                 this.dragTipo = '';
                 this.dragStartCell = null;
                 this.dragPreviewCells = [];
                 this.touchMoved = false;
+                this.touchIsSelecting = false;
             });
         });
         
