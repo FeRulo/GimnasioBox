@@ -365,6 +365,7 @@ const app = {
                 }
             });
             
+            // === EVENTOS MOUSE (Desktop) ===
             // Mousedown: preparar para posible drag
             cell.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -390,6 +391,68 @@ const app = {
                 if (this.isDragging && this.dragStartCell) {
                     this.mostrarPreviewSeleccion(this.dragStartCell, cell);
                 }
+            });
+            
+            // === EVENTOS TÁCTILES (Mobile) ===
+            // Touchstart: guardar celda inicial y tipo
+            cell.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.dragStartCell = cell;
+                
+                const tipoActual = cell.getAttribute('data-tipo');
+                const tipos = ['', 'Boxeo', 'Funcional', 'Fisio'];
+                const indexActual = tipos.indexOf(tipoActual);
+                this.dragTipo = tipos[(indexActual + 1) % tipos.length];
+                
+                // Detectar si es tap simple o drag
+                this.touchStartTime = Date.now();
+                this.touchMoved = false;
+            });
+            
+            // Touchmove: detectar celda bajo el dedo
+            cell.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                this.touchMoved = true;
+                
+                if (!this.isDragging) {
+                    this.isDragging = true;
+                }
+                
+                // Obtener coordenadas del touch
+                const touch = e.touches[0];
+                const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                // Verificar si es una celda del calendario
+                const targetCell = elementUnderFinger?.classList.contains('calendar-cell') 
+                    ? elementUnderFinger 
+                    : elementUnderFinger?.closest('.calendar-cell');
+                
+                if (targetCell && this.dragStartCell) {
+                    this.mostrarPreviewSeleccion(this.dragStartCell, targetCell);
+                }
+            });
+            
+            // Touchend: aplicar selección o toggle simple
+            cell.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                
+                const touchDuration = Date.now() - this.touchStartTime;
+                
+                // Si fue un tap rápido sin movimiento (< 200ms), hacer toggle simple
+                if (!this.touchMoved && touchDuration < 200) {
+                    this.toggleClaseTipo(cell);
+                } else if (this.isDragging && this.dragPreviewCells.length > 0) {
+                    // Si hubo drag, aplicar selección rectangular
+                    this.aplicarSeleccionRectangular();
+                    this.actualizarContadorClases();
+                }
+                
+                // Reset
+                this.isDragging = false;
+                this.dragTipo = '';
+                this.dragStartCell = null;
+                this.dragPreviewCells = [];
+                this.touchMoved = false;
             });
         });
         
